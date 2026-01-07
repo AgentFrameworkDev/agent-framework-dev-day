@@ -1,11 +1,17 @@
 # Python Labs
 
-Before entering a specific lab folder, activate the Python `venv` virtual environment (one line), install common dependencies (one line), then `cd` into a lab folder and start coding!
+Before entering a specific lab folder:
+
+1. install the Python `venv` virtual environment (one line)
+2. activate the Python `venv` virtual environment (one line)
+3. install common dependencies (one line)
+4. `cd` into a lab folder and start coding!
 
 ## Windows (Command Prompt)
 
 ```console
 # from .../labs/python
+python -m venv .venv
 venv\Scripts\activate
 # command prompt is now (.venv)
 pip install -r requirements.txt
@@ -15,6 +21,7 @@ pip install -r requirements.txt
 
 ```PowerShell
 # from .../labs/python
+python -m venv .venv
 env\Scripts\Activate.ps1
 # command prompt is now (.venv)
 pip install -r requirements.txt
@@ -30,6 +37,7 @@ CopySet-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ```console
 # from .../labs/python
+python -m venv .venv
 source .venv/bin/activate
 # command prompt is now (.venv)
 pip install -r requirements.txt

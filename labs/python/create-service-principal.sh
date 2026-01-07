@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SP_NAME="my-agent-app"
+SP_NAME="my-agent-framework-dev-day-app"
 ROLE="Cognitive Services User"
 SUB_ID="9ba7af2d-0913-4012-a72f-29edf9ee02d0"
 RG="rg-agentlab"
@@ -25,6 +25,18 @@ echo "Add these to your .env file:"
 echo "AZURE_TENANT_ID=$AZURE_TENANT_ID"
 echo "AZURE_CLIENT_ID=$AZURE_CLIENT_ID"
 echo "AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET"
+
+# to delete the service principal, uncomment the following line:
+#AZURE_CLIENT_ID="your-client-id-here"
+# az ad sp delete --id "$AZURE_CLIENT_ID"
+# echo "Service principal (enterprise app) '$SP_NAME' deleted."
+# az ad app delete --id "$AZURE_CLIENT_ID"
+# echo "Service principal (appregistration) '$SP_NAME' deleted."
+   
+# if we don't have the CLIENT_ID, use the name
+# SP_NAME="my-agent-app"
+# List matching service principals (enterprise apps)
+# az ad sp list --display-name "$SP_NAME" --query "[].{displayName:displayName,id:id,appId:appId}" -o table
 
 
 
