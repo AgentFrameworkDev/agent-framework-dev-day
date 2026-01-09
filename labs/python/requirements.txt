@@ -1,3 +1,4 @@
 agent-framework-azure-ai
-azure-identity
 python-dotenv
+azure-identity
+azure.mgmt.cognitiveservices
