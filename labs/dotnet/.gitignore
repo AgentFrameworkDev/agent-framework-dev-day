@@ -1,3 +1,26 @@
-appsettings.Local.json
+# Build output
 bin/
 obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS/Rider caches
+.vs/
+*.cache
+
+# NuGet
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+
+# Local config (secrets, connection strings)
+appsettings.Local.json
+appsettings.Development.json
+
+# Azure Foundry / Agent Framework local state
+.agents/
+.foundry/

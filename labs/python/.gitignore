@@ -1,3 +1,35 @@
-.venv
-.env
+# Virtual environments
+.venv/
+venv/
+ENV/
+.python-version
 
+# Environment variables (secrets)
+.env
+.env.local
+
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Type checking
+.mypy_cache/
+.pytype/
+
+# Azure Foundry / Agent Framework local state
+.agents/
+.foundry/
