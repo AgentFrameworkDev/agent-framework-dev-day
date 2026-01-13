@@ -39,7 +39,7 @@ I assume you have already gone through the notebooks, so your .env file should c
 
 ## Overview of the starter code
 
-In order for this workshop to be more challenging than my past RAG workshops, I have provided you with the application code that will perform one of the 7 types of qustions. 
+In order for this workshop to be more challenging than my past RAG workshops, I have provided you with the application code that will perform one of the 7 types of questions. 
 
 ### Starter application overview
 
@@ -68,7 +68,7 @@ User question → classifier routes → specialist agent tool calls SearchServic
 
 #### Dependencies: 
 - Microsoft Agent Framework for agents/workflows
--Azure OpenAI for chat + embeddings
+- Azure OpenAI for chat + embeddings
 - Azure AI Search for retrieval.
 
 #### Extension points: 

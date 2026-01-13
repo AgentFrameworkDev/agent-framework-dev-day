@@ -1,14 +1,14 @@
 using Azure;
 using Azure.AI.OpenAI;
-using Lab3Solution.Agents;
-using Lab3Solution.Config;
-using Lab3Solution.Services;
+using Lab3.Agents;
+using Lab3.Config;
+using Lab3.Services;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 
-namespace Lab3Solution;
+namespace Lab3;
 
 /// <summary>
 /// Agentic RAG application for IT support ticket search.
