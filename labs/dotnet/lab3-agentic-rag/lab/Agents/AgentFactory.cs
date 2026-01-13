@@ -1,9 +1,9 @@
-using Lab3Solution.Services;
+using Lab3.Services;
 using Microsoft.Agents.AI;
 using OpenAI.Chat;
 
 
-namespace Lab3Solution.Agents;
+namespace Lab3.Agents;
 
 /// <summary>
 /// Factory for creating specialized agents.

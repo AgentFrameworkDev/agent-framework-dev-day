@@ -2,3 +2,4 @@ agent-framework-azure-ai
 python-dotenv
 azure-identity
 azure-ai-projects
+azure-search-documents

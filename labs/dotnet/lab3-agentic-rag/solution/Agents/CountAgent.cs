@@ -1,10 +1,10 @@
 using System.Text.Json;
-using Lab3Solution.Services;
+using Lab3.Services;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;
 
-namespace Lab3Solution.Agents;
+namespace Lab3.Agents;
 
 /// <summary>
 /// Count agent for answering questions that require counting tickets with filters.
@@ -21,7 +21,20 @@ public static class CountAgent
         4. Give a brief breakdown or explanation
         5. Cite specific examples from the tickets using their IDs
 
+        Example response format:
+
+        Count: 3
+
+        Breakdown:
+        - 3 Incident tickets logged for Human Resources with low priority
+
+        Examples:
+        - Ticket INC001234: HR system login issue - Low priority
+        - Ticket INC001567: HR portal access problem - Low priority
+        - Ticket INC002345: HR database sync issue - Low priority
+
         Be precise with the count and base your answer strictly on the search results.
+        If the search doesn't return enough results to be confident, mention that the actual count might be higher.
         """;
 
     private static Func<string, Task<string>> CreateSearchFunction(SearchService searchService)
@@ -44,6 +57,7 @@ public static class CountAgent
                 Generate ONLY the OData filter expression. Use proper OData syntax:
                 - String equality: field eq 'value'
                 - AND conditions: field1 eq 'value1' and field2 eq 'value2'
+                - Case-sensitive string matching
 
                 Examples:
                 - "Incidents for Human Resources with low priority" -> Type eq 'Incident' and Queue eq 'Human Resources' and Priority eq 'low'
@@ -105,6 +119,13 @@ public static class CountAgent
 
                 Relevant Tickets Found (showing up to 50):
                 {resultsJson}
+                
+                IMPORTANT: Analyze these tickets carefully and count only those that match ALL the criteria in the question.
+                Pay attention to:
+                - Type field (Incident, Request, Problem, etc.)
+                - Queue/Department field 
+                - Priority field (high, medium, low)
+                - Any other specific criteria mentioned
 
                 Format your response as:
 
@@ -115,6 +136,9 @@ public static class CountAgent
 
                 Examples (list a few matching tickets):
                 - Ticket [ID]: [Brief description with relevant fields]
+                - Ticket [ID]: [Brief description with relevant fields]
+
+                Note: This count is based on the top 10 search results. The actual total may be higher if more tickets exist in the database.
 
                 Base your count strictly on tickets that match ALL criteria in the question.
                 """;

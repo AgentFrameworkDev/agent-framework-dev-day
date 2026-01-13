@@ -1,42 +1,40 @@
 ﻿using LabKeyEncrypter.Library;
+using System.Security.Cryptography;
 
-if (args.Length != 3)
+return await RunAsync(args);
+
+static async Task<int> RunAsync(string[] args)
 {
-    Console.WriteLine("Usage: LabKeyEncrypter.ConsoleApp <encrypt|decrypt> <file> <password>");
-    return;
-}
-var operation = args[0];
-var filePath = args[1];
-var password = args[2];
+    if (args is not [var operation, var filePath, var password])
+    {
+        Console.WriteLine("Usage: LabKeyEncrypter.ConsoleApp <encrypt|decrypt> <file> <password>");
+        return 1;
+    }
 
-
-if (operation == "encrypt")
-{
     try
     {
-        LabKeyJsonFileValueEncrypter.EncryptJsonValues(filePath, password);
+        var success = operation.ToLowerInvariant() switch
+        {
+            "encrypt" => await EncryptAsync(filePath, password),
+            "decrypt" => await DecryptAsync(filePath, password),
+            _ => throw new ArgumentException($"Invalid operation: {operation}")
+        };
+
+        Console.WriteLine(success ? "Operation completed successfully." : "Operation failed.");
+        return success ? 0 : 1;
     }
-    catch (System.IO.FileNotFoundException ex)
+    catch (Exception ex) when (ex is FileNotFoundException or AuthenticationTagMismatchException or ArgumentException)
     {
-        Console.WriteLine("Error: " + ex.Message);
+        Console.WriteLine($"Error: {ex.Message}");
+        return 1;
     }
 }
-else if (operation == "decrypt")
+
+static async Task<bool> EncryptAsync(string filePath, string password)
 {
-    try
-    {
-        LabKeyJsonFileValueEncrypter.DecryptJsonValues(filePath, password);
-    }
-    catch (System.Security.Cryptography.CryptographicException ex)
-    {
-        Console.WriteLine("Error decrypting value: " + ex.Message);
-    }
-    catch (System.IO.FileNotFoundException ex)
-    {
-        Console.WriteLine("Error: " + ex.Message);
-    }
+    await LabKeyJsonFileValueEncrypter.EncryptJsonValuesAsync(filePath, password);
+    return true;
 }
-else
-{
-    Console.WriteLine("Invalid operation: " + operation);
-}
+
+static async Task<bool> DecryptAsync(string filePath, string password) =>
+    await LabKeyJsonFileValueEncrypter.DecryptJsonValuesAsync(filePath, password);
