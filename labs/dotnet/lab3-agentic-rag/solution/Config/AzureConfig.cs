@@ -1,7 +1,7 @@
 using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 
-namespace Lab3Solution.Config;
+namespace Lab3.Config;
 
 /// <summary>
 /// Configuration for Azure services.

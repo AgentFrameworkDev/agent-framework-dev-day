@@ -1,14 +1,14 @@
 using Azure;
 using Azure.AI.OpenAI;
-using Lab3Solution.Agents;
-using Lab3Solution.Config;
-using Lab3Solution.Services;
+using Lab3.Agents;
+using Lab3.Config;
+using Lab3.Services;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 
-namespace Lab3Solution;
+namespace Lab3;
 
 /// <summary>
 /// Agentic RAG application for IT support ticket search.
@@ -84,13 +84,13 @@ class Program
         // Example questions to test
         var testQuestions = new[]
         {
-            "How many tickets were logged and Incidents for Human Resources and low priority?",
-            "What problems are there with Surface devices?",
-            "Are there any issues for Dell XPS laptops?",
-            "Which Dell XPS issue does not mention Windows?",
-            "What issues are for Dell XPS laptops and the user tried Win + Ctrl + Shift + B?",
-            "What department had consultants with Login Issues?",
-            "Do we have more issues with MacBook Air computers or Dell XPS laptops?",
+            "What problems are there with Surface devices?", //  (Simple question) 
+            "Are there any issues for Dell XPS laptops?", // (Yes/No)
+            "How many tickets were logged and Incidents for Human Resources and low priority?", //  (Count)
+            "Do we have more issues with MacBook Air computers or Dell XPS laptops?", // (Comparative)
+            "Which Dell XPS issue does not mention Windows?", // (Difference)
+            "What issues are for Dell XPS laptops and the user tried Win + Ctrl + Shift + B?", // (Intersection)
+            "What department had consultants with Login Issues?",  // (Multi-hop)
         };
 
         Console.WriteLine("\n" + new string('=', 60));

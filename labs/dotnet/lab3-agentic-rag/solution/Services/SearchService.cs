@@ -3,12 +3,12 @@ using Azure;
 using Azure.AI.OpenAI;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
-using Lab3Solution.Config;
-using Lab3Solution.Models;
+using Lab3.Config;
+using Lab3.Models;
 using OpenAI.Chat;
 using OpenAI.Embeddings;
 
-namespace Lab3Solution.Services;
+namespace Lab3.Services;
 
 /// <summary>
 /// Service for searching IT support tickets in Azure AI Search.
