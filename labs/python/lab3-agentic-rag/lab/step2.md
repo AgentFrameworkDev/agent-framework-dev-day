@@ -65,7 +65,7 @@ The database contains IT support tickets with these fields:
 
 ```
 
-This all means, you won't need to modify the classifier for the yes/no questions to classified correctly - we just need to implement the agent and wire it up so it can be routed to. Let's do that now.
+This all means, you won't need to modify the classifier for the yes/no questions to classified correctly - you just need to implement the agent and wire it up so it can be routed to. Let's do that now.
 
 ## Implement the Yes/No Agent
 
