@@ -1,9 +1,8 @@
-﻿using System.Diagnostics;
+using System.ClientModel;
+using System.Diagnostics;
 using Azure.AI.Projects;
-using Azure.Core;
 using Azure.Identity;
 using Microsoft.Agents.AI;
-using Microsoft.Extensions.Configuration;
 
 namespace Lab0;
 
@@ -11,48 +10,16 @@ public static class Program
 {
    public static async Task Main(string[] args)
    {
-      // Build configuration with priority: Environment Variables > appsettings.Local.json
-      // Config file is in the parent directory (labs/dotnet/)
-      var basePath = FindConfigDirectory("appsettings.Local.json")
-          ?? throw new InvalidOperationException("Could not find appsettings.Local.json in any parent directory");
-
-      var configuration = new ConfigurationBuilder()
-          .SetBasePath(basePath)
-          .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
-          .AddEnvironmentVariables()
-          .Build();
-
-      // Get configuration values (env vars take precedence)
-      var endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_AGENT_ENDPOINT")
-          ?? configuration["AzureAI:ProjectEndpoint"]
-          ?? throw new InvalidOperationException("Azure AI endpoint not configured. Set AZURE_OPENAI_AGENT_ENDPOINT env var or AzureAI:ProjectEndpoint in appsettings.Local.json");
-
-      var deployment = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT")
-          ?? configuration["AzureAI:ModelDeploymentName"]
-          ?? throw new InvalidOperationException("Azure AI deployment not configured. Set AZURE_OPENAI_DEPLOYMENT env var or AzureAI:ModelDeploymentName in appsettings.Local.json");
-
-      // Get optional service principal credentials from config
-      var tenantId = configuration["Azure:TenantId"];
-      var clientId = configuration["Azure:ClientId"];
-      var clientSecret = configuration["Azure:ClientSecret"];
+      // Load configuration and create client using the factory
+      var config = FoundryClientFactory.GetConfiguration();
+      var aiProjectClient = FoundryClientFactory.CreateProjectClient(config);
 
       Console.WriteLine("Welcome to Agent Framework Dev Day!");
       Console.WriteLine("===================================");
-      Console.WriteLine($"Endpoint: {endpoint}");
-      Console.WriteLine($"Deployment: {deployment}");
+      Console.WriteLine($"Endpoint: {config.Endpoint}");
+      Console.WriteLine($"Deployment: {config.DeploymentName}");
+      Console.WriteLine($"Auth: {(config.Credential is ClientSecretCredential ? "Service Principal" : "Default Azure Credential")}");
       Console.WriteLine();
-
-      // Create credential - use service principal if configured, otherwise fall back to DefaultAzureCredential
-      // DefaultAzureCredential will try: Environment, Managed Identity, Visual Studio, Azure CLI, etc.
-      TokenCredential credential = !string.IsNullOrEmpty(tenantId) && !string.IsNullOrEmpty(clientId) && !string.IsNullOrEmpty(clientSecret)
-          ? new ClientSecretCredential(tenantId, clientId, clientSecret)
-          : new DefaultAzureCredential();
-
-      Console.WriteLine($"Auth: {(credential is ClientSecretCredential ? "Service Principal" : "Default Azure Credential")}");
-      Console.WriteLine();
-
-      // Create client to interact with Azure AI Foundry
-      var aiProjectClient = new AIProjectClient(new Uri(endpoint), credential);
 
       // Randomly select a model from available deployments
       var (selectedModel, underlyingModelName) = await GetRandomAvailableModelAsync(aiProjectClient);
@@ -108,6 +75,28 @@ public static class Program
          Console.WriteLine("Models Used:");
          Console.WriteLine("========================================");
       }
+      catch (ClientResultException ex)
+      {
+         Console.WriteLine("An error occurred while calling the Foundry AI service.");
+         Console.WriteLine($"Message: {ex.Message}");
+
+         var raw = ex.GetRawResponse();
+         if (raw is not null)
+         {
+            Console.WriteLine($"Reason phrase: {raw.ReasonPhrase}");
+            Console.WriteLine($"Error body: {raw.Content}");
+            Console.WriteLine("——— Response headers ———");
+            foreach (var kv in raw.Headers)
+            {
+               Console.WriteLine($"{kv.Key}: {kv.Value}");
+            }
+         }
+      }
+      catch (Exception ex)
+      {
+         Console.WriteLine("An error occurred while running the agent:");
+         Console.WriteLine(ex.ToString());
+      }
       finally
       {
          // Cleanup - delete the agent
@@ -127,26 +116,6 @@ public static class Program
       // var randomModel = await GetRandomAvailableModelAsync(aiProjectClient);
       // Console.WriteLine();
       // Console.WriteLine($"Randomly selected model deployment: {randomModel}");
-   }
-
-   /// <summary>
-   /// Searches for a configuration file starting from the current directory and walking up parent directories.
-   /// </summary>
-   private static string? FindConfigDirectory(string fileName)
-   {
-      var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
-
-      while (directory != null)
-      {
-         var configPath = Path.Combine(directory.FullName, fileName);
-         if (File.Exists(configPath))
-         {
-            return directory.FullName;
-         }
-         directory = directory.Parent;
-      }
-
-      return null;
    }
 
    /// <summary>
