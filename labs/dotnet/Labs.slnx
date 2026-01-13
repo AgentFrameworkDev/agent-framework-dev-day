@@ -1,9 +1,23 @@
 <Solution>
-  <Folder Name="/lab0/" />
-  <Folder Name="/lab0/lab-solution/">
-    <Project Path="lab0/lab-solution/lab0.csproj" />
+  <Folder Name="/lab0-hello-world/" />
+  <Folder Name="/lab0-hello-world/lab/">
+    <Project Path="lab0-hello-world/lab/lab0.csproj" />
   </Folder>
-  <Folder Name="/lab0/lab/">
-    <Project Path="lab0/lab/lab0.csproj" />
+  <Folder Name="/lab0-hello-world/solution/">
+    <Project Path="lab0-hello-world/solution/lab0.csproj" />
+  </Folder>
+  <Folder Name="/lab1-basic-training/" />
+  <Folder Name="/lab1-basic-training/lab/">
+    <Project Path="lab1-basic-training/lab/lab1.csproj" />
+  </Folder>
+  <Folder Name="/lab1-basic-training/solution/">
+    <Project Path="lab1-basic-training/solution/lab1.csproj" />
+  </Folder>
+  <Folder Name="/lab3-agentic-rag/" />
+  <Folder Name="/lab3-agentic-rag/lab/">
+    <Project Path="lab3-agentic-rag/lab/Lab3Exercise.csproj" />
+  </Folder>
+  <Folder Name="/lab3-agentic-rag/solution/">
+    <Project Path="lab3-agentic-rag/solution/Lab3Solution.csproj" />
   </Folder>
 </Solution>
