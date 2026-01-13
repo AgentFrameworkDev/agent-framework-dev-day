@@ -1,10 +1,10 @@
 using System.Text.Json;
-using Lab3Solution.Services;
+using Lab3.Services;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;
 
-namespace Lab3Solution.Agents;
+namespace Lab3.Agents;
 
 /// <summary>
 /// Count agent for answering questions that require counting tickets with filters.

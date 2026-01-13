@@ -1,5 +1,5 @@
 
-namespace Lab3Solution.Workflows;
+namespace Lab3.Workflows;
 
 /// <summary>
 /// Workflow event handlers and utilities.

@@ -1,7 +1,7 @@
 using Microsoft.Agents.AI;
 using OpenAI.Chat;
 
-namespace Lab3Solution.Agents;
+namespace Lab3.Agents;
 
 /// <summary>
 /// Classifier agent for routing queries to specialized search agents.
