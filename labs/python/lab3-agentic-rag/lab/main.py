@@ -67,10 +67,10 @@ async def main():
         "What problems are there with Surface devices?", #  (Simple question) 
         "Are there any issues for Dell XPS laptops?", # (Yes/No)
         "How many tickets were logged and Incidents for Human Resources and low priority?", #  (Count)
+        "Do we have more issues with MacBook Air computers or Dell XPS laptops?", # (Comparative)
         "Which Dell XPS issue does not mention Windows?", # (Difference)
         "What issues are for Dell XPS laptops and the user tried Win + Ctrl + Shift + B?", # (Intersection)
         "What department had consultants with Login Issues?",  # (Multi-hop)
-        "Do we have more issues with MacBook Air computers or Dell XPS laptops?", # (Comparative)
     ]
     
     print("\n" + "=" * 60)

@@ -1,48 +1,81 @@
-using System;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace LabKeyEncrypter.Library;
-public class LabKeyJsonFileValueEncrypter
+
+/// <summary>
+/// Encrypts and decrypts JSON file values using AES-256-GCM.
+/// </summary>
+public static class LabKeyJsonFileValueEncrypter
 {
-
-
-    public static void EncryptJsonValues(string filePath, string password)
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        string jsonString = File.ReadAllText(filePath);
-        var jsonObject = JObject.Parse(jsonString);
+        WriteIndented = true
+    };
 
-        foreach (var property in jsonObject.Properties())
+    /// <summary>
+    /// Encrypts all top-level values in a JSON file and saves to a new file.
+    /// </summary>
+    /// <param name="filePath">Path to the JSON file to encrypt.</param>
+    /// <param name="password">Password for encryption.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public static async Task EncryptJsonValuesAsync(string filePath, string password, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
+        ArgumentException.ThrowIfNullOrEmpty(password);
+
+        var jsonString = await File.ReadAllTextAsync(filePath, cancellationToken);
+        var jsonObject = JsonNode.Parse(jsonString)?.AsObject()
+            ?? throw new JsonException("Invalid JSON: expected an object");
+
+        foreach (var (key, value) in jsonObject.ToArray())
         {
-            var plainText = property.Value.ToString();
-            var encrypted = LabKeyEncrypter.Encrypt(plainText, password);
-            property.Value = encrypted;
+            var plainText = value?.ToJsonString() ?? "null";
+            jsonObject[key] = LabKeyEncrypter.Encrypt(plainText, password);
         }
-        var encryptedFilePath = filePath.Replace(".json", "_encrypted.json");
 
-        File.WriteAllText(encryptedFilePath, jsonObject.ToString());
+        var encryptedFilePath = Path.ChangeExtension(filePath, null) + "_encrypted.json";
+        await File.WriteAllTextAsync(encryptedFilePath, jsonObject.ToJsonString(JsonOptions), cancellationToken);
     }
 
-    public static bool DecryptJsonValues(string filePath, string password)
-    {
-        string jsonString = File.ReadAllText(filePath);
-        var jsonObject = JObject.Parse(jsonString);
+    /// <summary>
+    /// Encrypts all top-level values in a JSON file and saves to a new file (synchronous).
+    /// </summary>
+    public static void EncryptJsonValues(string filePath, string password) =>
+        EncryptJsonValuesAsync(filePath, password).GetAwaiter().GetResult();
 
-        foreach (var property in jsonObject.Properties())
+    /// <summary>
+    /// Decrypts all top-level values in an encrypted JSON file and saves to a new file.
+    /// </summary>
+    /// <param name="filePath">Path to the encrypted JSON file.</param>
+    /// <param name="password">Password for decryption.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if decryption was successful.</returns>
+    public static async Task<bool> DecryptJsonValuesAsync(string filePath, string password, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
+        ArgumentException.ThrowIfNullOrEmpty(password);
+
+        var jsonString = await File.ReadAllTextAsync(filePath, cancellationToken);
+        var jsonObject = JsonNode.Parse(jsonString)?.AsObject()
+            ?? throw new JsonException("Invalid JSON: expected an object");
+
+        foreach (var (key, value) in jsonObject.ToArray())
         {
-            var encrypted = property.Value.ToString();
+            var encrypted = value?.GetValue<string>()
+                ?? throw new JsonException($"Expected string value for key '{key}'");
             var decrypted = LabKeyEncrypter.Decrypt(encrypted, password);
-            property.Value = JToken.Parse(decrypted); // Parse the decrypted value to ensure it's properly formatted
+            jsonObject[key] = JsonNode.Parse(decrypted);
         }
 
-        var decryptedFilePath = filePath.Replace("_encrypted.json", ".json");
-
-        File.WriteAllText(decryptedFilePath, jsonObject.ToString());
+        var decryptedFilePath = filePath.Replace("_encrypted.json", ".json", StringComparison.OrdinalIgnoreCase);
+        await File.WriteAllTextAsync(decryptedFilePath, jsonObject.ToJsonString(JsonOptions), cancellationToken);
         return true;
     }
 
+    /// <summary>
+    /// Decrypts all top-level values in an encrypted JSON file (synchronous).
+    /// </summary>
+    public static bool DecryptJsonValues(string filePath, string password) =>
+        DecryptJsonValuesAsync(filePath, password).GetAwaiter().GetResult();
 }

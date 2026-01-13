@@ -1,4 +1,4 @@
-namespace Lab3Solution.Models;
+namespace Lab3.Models;
 
 /// <summary>
 /// Represents a support ticket from the search index.

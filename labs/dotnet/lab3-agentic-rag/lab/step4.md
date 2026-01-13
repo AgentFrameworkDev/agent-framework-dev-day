@@ -13,7 +13,7 @@
 1. Must complete [step 3](step3.md) first
 
 ## Challenge
-Now you have a good start knowing how the `yes_no_agent` and the `count_agent` are implemented and added to the workflow for the system to use when needed. It is now your turn to implement the additional agent types.
+Now you have a good start knowing how the `YesNoAgent` and the `CountAgent` are implemented and added to the workflow for the system to use when needed. It is now your turn to implement the additional agent types.
 
 ### Comparative Agent
 
