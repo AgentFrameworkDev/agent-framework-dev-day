@@ -22,7 +22,34 @@ public static class ComparativeAgent
         4. Cite specific examples from the tickets using their IDs
         5. Declare which item has more issues/occurrences
 
+        Example response format:
+
+        **Comparison: MacBook Air vs Dell XPS**
+
+        **MacBook Air Issues: 15 tickets**
+        - Battery drain problems (5 tickets)
+        - Display flickering (4 tickets)
+        - Keyboard issues (3 tickets)
+        - Other issues (3 tickets)
+
+        Examples:
+        - Ticket INC001234: MacBook Air battery draining rapidly
+        - Ticket INC001567: MacBook Air screen flickering issue
+
+        **Dell XPS Issues: 23 tickets**
+        - Touchpad not responding (8 tickets)
+        - Battery swelling (6 tickets)
+        - Display problems (5 tickets)
+        - Other issues (4 tickets)
+
+        Examples:
+        - Ticket INC002345: Dell XPS touchpad frozen
+        - Ticket INC002890: Dell XPS 15 battery swelling
+
+        **Conclusion**: Dell XPS laptops have more reported issues (23 tickets) compared to MacBook Air computers (15 tickets), with a difference of 8 additional tickets.
+
         Be precise with counts and base your answer strictly on the search results.
+        Always clearly state which option has more issues.
         """;
 
     private static Func<string, Task<string>> CreateSearchFunction(SearchService searchService)
@@ -43,6 +70,16 @@ public static class ComparativeAgent
                     ""explanation"": ""brief explanation""
                 }}
 
+                Examples:
+                - ""Do we have more issues with MacBook Air computers or Dell XPS laptops?"" 
+                -> {{""item_1"": ""MacBook Air"", ""item_2"": ""Dell XPS"", ""additional_items"": [], ""comparison_type"": ""issue count"", ""explanation"": ""Compare number of issues for MacBook Air vs Dell XPS""}}
+                
+                - ""Which has more tickets: Surface Pro or iPad?""
+                -> {{""item_1"": ""Surface Pro"", ""item_2"": ""iPad"", ""additional_items"": [], ""comparison_type"": ""ticket count"", ""explanation"": ""Compare ticket counts for Surface Pro vs iPad""}}
+
+                - ""Are there more high priority incidents for HR, IT, or Finance?""
+                -> {{""item_1"": ""HR"", ""item_2"": ""IT"", ""additional_items"": [""Finance""], ""comparison_type"": ""high priority incidents"", ""explanation"": ""Compare high priority incident counts across departments""}}
+
                 Respond ONLY with the JSON object.
                 ";
 
@@ -50,7 +87,7 @@ public static class ComparativeAgent
             {
                 var parseResponse = await searchService.ChatClient.AsIChatClient().GetResponseAsync(parsePrompt);
                 var responseText = parseResponse.Messages.FirstOrDefault()?.Text ?? "{}";
-                
+
                 // Clean markdown code blocks
                 if (responseText.Contains("```json"))
                 {
@@ -105,7 +142,20 @@ public static class ComparativeAgent
                     Detailed Ticket Data:
                     {resultsJson}
 
-                    Provide a detailed comparative analysis showing counts, examples, and which item has more.
+                    Provide a detailed comparative analysis that:
+                    1. Shows the count for each item being compared
+                    2. Provides breakdown of issue types for each item if relevant
+                    3. Cites specific ticket IDs as examples (2-3 per item)
+                    4. Clearly states which item has MORE issues/tickets
+                    5. Includes the difference in counts
+
+                    Format your response with:
+                    - Clear headings for each item
+                    - Counts prominently displayed
+                    - Specific ticket examples
+                    - A conclusion stating which has more and by how much
+
+                    Base your answer strictly on the search results provided.
                     """;
             }
             catch (Exception ex)
