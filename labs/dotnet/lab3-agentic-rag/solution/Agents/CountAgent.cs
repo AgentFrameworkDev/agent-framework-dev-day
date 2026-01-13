@@ -57,6 +57,7 @@ public static class CountAgent
                 Generate ONLY the OData filter expression. Use proper OData syntax:
                 - String equality: field eq 'value'
                 - AND conditions: field1 eq 'value1' and field2 eq 'value2'
+                - Case-sensitive string matching
 
                 Examples:
                 - "Incidents for Human Resources with low priority" -> Type eq 'Incident' and Queue eq 'Human Resources' and Priority eq 'low'
@@ -118,6 +119,13 @@ public static class CountAgent
 
                 Relevant Tickets Found (showing up to 50):
                 {resultsJson}
+                
+                IMPORTANT: Analyze these tickets carefully and count only those that match ALL the criteria in the question.
+                Pay attention to:
+                - Type field (Incident, Request, Problem, etc.)
+                - Queue/Department field 
+                - Priority field (high, medium, low)
+                - Any other specific criteria mentioned
 
                 Format your response as:
 
@@ -128,6 +136,9 @@ public static class CountAgent
 
                 Examples (list a few matching tickets):
                 - Ticket [ID]: [Brief description with relevant fields]
+                - Ticket [ID]: [Brief description with relevant fields]
+
+                Note: This count is based on the top 10 search results. The actual total may be higher if more tickets exist in the database.
 
                 Base your count strictly on tickets that match ALL criteria in the question.
                 """;
