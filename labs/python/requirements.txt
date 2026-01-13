@@ -2,3 +2,4 @@ agent-framework-azure-ai
 python-dotenv
 azure-identity
 azure.mgmt.cognitiveservices
+azure-search-documents
