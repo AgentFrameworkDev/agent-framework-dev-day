@@ -14,3 +14,7 @@ Consider `pip freeze > requirements.txt` or `pip freeze >> requirements.txt` as 
 ## Authentication
 
 If `az login` is not the approach, you can test with `az account show` (after `az logout` if necessary) to be sure you are really testing the non-authenticated path.
+
+## Python
+
+Command Palette → "Python: Select Interpreter"
