@@ -14,7 +14,7 @@ In the [Mintaka: A Complex, Natural, and Multilingual Dataset for End-to-End Que
 
 > COUNT: questions where the answer requires counting. For example, Q: How many astronauts have been elected to Congress? A: 4
 
-This question is different than the normal semantic search because we want a numeric result with an optional explaination.
+This question is different than the normal semantic search because we want a numeric result with an optional explanation.
 
 In our dataset some count questions could be:
 - "How many consultants have reported access problems?"
@@ -25,7 +25,7 @@ In our dataset some count questions could be:
 
 ## Classifier Prompt to recognize a count question
 
-1. In your VS Code, open the [classifier_agent.py](./agents/classifier_agent.py) file, go to line 71 to find the count related portion.
+1. In your VS Code, open the [ClassifierAgent.cs](./Agents/ClassifierAgent.cs) file, go to line 82 to find the count related portion.
 ```shell
    - When "and" combines database field values (Priority=high, Queue=HR, Type=Incident), these are FILTERS, not intersection
    - Keywords: "how many", "number of", "count of", "total", "how much"
@@ -33,7 +33,7 @@ In our dataset some count questions could be:
      - "How many tickets were logged for Human Resources?" ✓ COUNT_AGENT
      - "How many tickets were logged and Incidents for Human Resources and low priority?" ✓ COUNT_AGENT (Type=Incident AND Queue=HR AND Priority=low - all filters!)
      - "What is the total number of open tickets?" ✓ COUNT_AGENT
-     - "Count of high priority incidents for IT?" ✓ COUNT_AGENT (Priority=high AND Type=Incident AND Queue=IT - all filters!)Human Resources and low priority?" ✓ COUNT_AGENT (and = filters)
+     - "Count of high priority incidents for IT?" ✓ COUNT_AGENT (Priority=high AND Type=Incident AND Queue=IT - all filters!) Human Resources and low priority?" ✓ COUNT_AGENT (and = filters)
      - "What is the total number of open tickets?" ✓ COUNT_AGENT
      - "Count of high priority incidents" ✓ COUNT_AGENT
 ```
@@ -42,22 +42,25 @@ This prompt has been modified a few times after some testing to get to the curre
 
 ## Implement the Count Agent
 
-Now we'll use the pattern we used for the yes_no_agent to implement a count_agent.
+Now we'll use the pattern we used for the YesNoAgent to implement a CountAgent.
 
-1. In the agents folder, create a file named `count_agent.py`
-2. Add the following import statements at the top:
+1. In the agents folder, create a class named `CountAgent.cs`
+2. Add the following using statements at the top and make the class static:
 
-```python
-import json
-from typing import Annotated
-from agent_framework import ChatAgent, ai_function
-from agent_framework.azure import AzureOpenAIChatClient
+```c#
+using System.Text.Json;
+using Lab3.Services;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
+using OpenAI.Chat;
 
-from services import SearchService
+namespace Lab3.Agents;
+
+public static class CountAgent
 ```
 
-3. Next, below the imports add the following Instructions:
-```python
+3. Next, below the using statements add the following Instructions:
+```c#
 COUNT_AGENT_INSTRUCTIONS = """
 You are a specialist in answering counting questions about IT support tickets.
 
@@ -89,120 +92,103 @@ As you can see, these instructions tell the LLM that we want a clear count as a 
 
 4. Next add the following code for the logic to perform the logic with the search index:
 
-```python
-def create_count_search_function(search_service: SearchService):
-    """
-    Factory function to create a count search AI function with the search service.
-    
-    Args:
-        search_service: Initialized SearchService instance
-        
-    Returns:
-        AI function for count searches
-    """
-    
-    @ai_function
-    async def count_search(
-        user_question: Annotated[str, "User question requiring counting items"]
-    ) -> str:
-        """
-        Answers counting questions by searching and counting tickets in the IT support database.
-        Returns count with breakdown and examples.
-        """
-        # Generate OData filter using LLM
-        filter_prompt = f"""
-You are an expert at converting natural language questions into OData filter expressions for Azure AI Search.
+```c#
+    private static Func<string, Task<string>> CreateSearchFunction(SearchService searchService)
+    {
+        return async (string userQuestion) =>
+        {
+            // Generate OData filter using LLM
+            var filterPrompt = $"""
+                You are an expert at converting natural language questions into OData filter expressions for Azure AI Search.
 
-Database Schema:
-- Type: string (values: "Incident", "Request", "Problem", "Change")
-- Queue: string (department name like "Human Resources", "IT", "Finance", etc.)
-- Priority: string (values: "high", "medium", "low")
-- Business_Type: string
-- Tags: collection of strings
+                Database Schema:
+                - Type: string (values: "Incident", "Request", "Problem", "Change")
+                - Queue: string (department name like "Human Resources", "IT", "Finance", etc.)
+                - Priority: string (values: "high", "medium", "low")
+                - Business_Type: string
+                - Tags: collection of strings
 
-Question: {user_question}
+                Question: {userQuestion}
 
-Generate ONLY the OData filter expression. Use proper OData syntax:
-- String equality: field eq 'value'
-- AND conditions: field1 eq 'value1' and field2 eq 'value2'
-- Case-sensitive string matching
+                Generate ONLY the OData filter expression. Use proper OData syntax:
+                - String equality: field eq 'value'
+                - AND conditions: field1 eq 'value1' and field2 eq 'value2'
 
-Examples:
-- "Incidents for Human Resources with low priority" -> Type eq 'Incident' and Queue eq 'Human Resources' and Priority eq 'low'
-- "High priority tickets for IT" -> Priority eq 'high' and Queue eq 'IT'
+                Examples:
+                - "Incidents for Human Resources with low priority" -> Type eq 'Incident' and Queue eq 'Human Resources' and Priority eq 'low'
+                - "High priority tickets for IT" -> Priority eq 'high' and Queue eq 'IT'
 
-If no filters are needed, respond with: NO_FILTER
+                If no filters are needed, respond with: NO_FILTER
 
-OData filter:
-"""
-        # Call LLM to generate filter
-        from agent_framework import ChatMessage
-        try:
+                OData filter:
+                """;
 
-            filter_response = await search_service.chat_client.get_response(
-                messages=filter_prompt
-            )
-            odata_filter = filter_response.messages[0].text.strip()
-        except Exception as e:
-            odata_filter = "NO_FILTER"
-        
-        # Clean up the response
-        if "NO_FILTER" in odata_filter or not odata_filter:
-            odata_filter = None
-        
-        # Execute search with filter and get more results for accurate counting
-        search_results = search_service.search_tickets_with_filter(
-            user_question, 
-            odata_filter=odata_filter,
-            top_k=50  # Get more results for better count accuracy
-        )
-        
-        # Check if any results found
-        if not search_results:
-            return (
-                f"Question: {user_question}\n\n"
-                "Count: 0\n\n"
-                "No tickets were found matching the specified criteria."
-            )
-        
-        # Build analysis prompt with search results
-        results_json = json.dumps(search_results, indent=2, ensure_ascii=False)
-        filter_info = f"\nApplied Filter: {odata_filter}" if odata_filter else "\nNo filter applied (semantic search only)"
-        
-        count_prompt = f"""
-Based on the following IT support tickets, answer the counting question.
+            string? odataFilter = null;
+            try
+            {
+                var filterResponse = await searchService.ChatClient.AsIChatClient().GetResponseAsync(filterPrompt);
+                var filterText = filterResponse.Messages.FirstOrDefault()?.Text ?? "NO_FILTER";
+                
+                if (!filterText.Contains("NO_FILTER") && !string.IsNullOrWhiteSpace(filterText))
+                {
+                    odataFilter = filterText.Trim();
+                }
+            }
+            catch
+            {
+                odataFilter = null;
+            }
 
-Question: {user_question}{filter_info}
+            // Execute search with filter
+            var searchResults = await searchService.SearchTicketsWithFilterAsync(
+                userQuestion,
+                odataFilter,
+                topK: 50
+            );
 
-Relevant Tickets Found (showing up to 50):
-{results_json}
+            if (searchResults.Count == 0)
+            {
+                return $"""
+                    Question: {userQuestion}
 
-IMPORTANT: Analyze these tickets carefully and count only those that match ALL the criteria in the question.
-Pay attention to:
-- Type field (Incident, Request, Problem, etc.)
-- Queue/Department field 
-- Priority field (high, medium, low)
-- Any other specific criteria mentioned
+                    Count: 0
 
-Format your response as:
+                    No tickets were found matching the specified criteria.
+                    """;
+            }
 
-Count: [NUMBER]
+            var resultsJson = JsonSerializer.Serialize(searchResults, new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
 
-Breakdown:
-- [Description of what was counted]
+            var filterInfo = !string.IsNullOrEmpty(odataFilter)
+                ? $"\nApplied Filter: {odataFilter}"
+                : "\nNo filter applied (semantic search only)";
 
-Examples (list a few matching tickets):
-- Ticket [ID]: [Brief description with relevant fields]
-- Ticket [ID]: [Brief description with relevant fields]
+            return $"""
+                Based on the following IT support tickets, answer the counting question.
 
-Note: This count is based on the top 10 search results. The actual total may be higher if more tickets exist in the database.
+                Question: {userQuestion}{filterInfo}
 
-Base your count strictly on tickets that match ALL criteria in the question.
-"""
-        
-        return count_prompt
-    
-    return count_search
+                Relevant Tickets Found (showing up to 50):
+                {resultsJson}
+
+                Format your response as:
+
+                Count: [NUMBER]
+
+                Breakdown:
+                - [Description of what was counted]
+
+                Examples (list a few matching tickets):
+                - Ticket [ID]: [Brief description with relevant fields]
+
+                Base your count strictly on tickets that match ALL criteria in the question.
+                """;
+        };
+    }
 ```
 
 This logic does a little more than the yes/no agent - mainly because we need to make an LLM call to get the filter to use. It performs these steps:
@@ -210,81 +196,53 @@ This logic does a little more than the yes/no agent - mainly because we need to 
 2. make an LLM call to get an OData filter or no filter
 3. use the filter (if there is one) and call the search index
 4. if there aren't any search results, then the answer is 0
-5. if there were answers, then create a prompt that includes the answers with question and the count, so the LLM can determine from the agent result what to return to the user.
+5. if there were answers, then create a prompt that includes the answers with question, so the LLM can determine from the agent result what to return to the user.
 
 Next, you need a to creat an agent that will provide the creation of the agent.
 
 5. At the end of the file, paste the following code:
-```python
-def create_count_agent(
-    chat_client: AzureOpenAIChatClient,
-    search_service: SearchService
-) -> ChatAgent:
-    """
-    Create the count specialist agent.
-    
-    Args:
-        chat_client: Azure OpenAI chat client
-        search_service: Search service for ticket queries
-        
-    Returns:
-        Configured count ChatAgent with search capabilities
-    """
-    # Create the AI function with the search service
-    count_search_fn = create_count_search_function(search_service)
-    
-    return chat_client.create_agent(
-        instructions=COUNT_AGENT_INSTRUCTIONS,
-        name="count_agent",
-        tools=[count_search_fn],
-    )
+```c#
+public static AIAgent Create(ChatClient chatClient, SearchService searchService)
+{
+    var searchFunction = CreateSearchFunction(searchService);
+
+    return chatClient.CreateAIAgent(
+        instructions: Instructions,
+        name: "count_agent",
+        tools: new[] { AIFunctionFactory.Create(searchFunction) }
+    );
+}
+```
+
+As with the yes/no agent, you now need to add it to the [AgentFactory.cs](./Agents/AgentFactory.cs) and [Program.cs](Program.cs).
+
+6. Open the [AgentFactory.cs](./Agents/AgentFactory.cs) file, modify the `CreateAllAgents()` method to look like the following:
+```c#
+public Dictionary<string, AIAgent> CreateAllAgents()
+{
+    return new Dictionary<string, AIAgent>
+    {
+        ["classifier"] = ClassifierAgent.Create(_chatClient),
+        ["semantic_search"] = SemanticSearchAgent.Create(_chatClient, _searchService),
+        ["yes_no"] = YesNoAgent.Create(_chatClient, _searchService),
+        ["count"] = CountAgent.Create(_chatClient, _searchService)
+        // TODO: Add more agents here as needed
+    };
+}
 
 ```
 
-As with the yes/no agent, you now need to add it to the [agent_factory.py](./agents/agent_factory.py) and [main.py](main.py).
-
-6. Open the [agent_factory.py](./agents/agent_factory.py) file, add the import for the agent toward the top where the semantic_agent is:
-```python
-from agents import (
-    classifier_agent,
-    semantic_search_agent,
-    yes_no_agent,
-    count_agent
-)
+7. Next, open the [Program.cs](Program.cs) file and find the two places the workflow is defined and modify it to the following:
+```c#
+    var workflow = AgentWorkflowBuilder.CreateHandoffBuilderWith(agents["classifier"])
+        .WithHandoffs(agents["classifier"], [agents["semantic_search"], agents["yes_no"], agents["count"]])
+        .WithHandoffs([agents["semantic_search"], agents["yes_no"], agents["count"]], agents["classifier"])
+        .Build();
 ```
 
-7. Then modify the `create_all_agents()` method to look like the following:
-```python
-    def create_all_agents(self) -> dict[str, ChatAgent]:
-        """
-        Create all agents needed for the system.
-        
-        Returns:
-            Dictionary mapping agent names to ChatAgent instances
-        """
-        return {
-            "classifier": classifier_agent.create_classifier_agent(self.chat_client),
-            "semantic_search": semantic_search_agent.create_semantic_search_agent(self.chat_client, self.search_service),
-             "yes_no": yes_no_agent.create_yes_no_agent(self.chat_client, self.search_service),
-             "count": count_agent.create_count_agent(self.chat_client, self.search_service),
-            # TODO: Add more agents here as needed
-        }
-```
-8. Next, open the [main.py](main.py) file and find the two places the workflow is defined and modify it to the following:
-```python
-    workflow = (
-        HandoffBuilder(
-            name="agentic_rag_workflow",
-            participants=[agents["classifier"], agents["semantic_search"], agents["yes_no"], agents["count"]],
-        )
-        .set_coordinator(agents["classifier"])
-        .build()
-    )
-```
-
-You can now run the main.py in your debugger or on the command line:
+You can now run the console application in your debugger or on the command line:
 ```shell
-python main.py
+dotnet run
 ```
 
 Look through the results for Query 3/7, the result shoould look something like this:
@@ -292,17 +250,22 @@ Look through the results for Query 3/7, the result shoould look something like t
 --- Query 3/7 ---
 User: How many tickets were logged and Incidents for Human Resources and low priority?
 
-  count_agent: Count: 3
+classifier_agent_91ee9cd45faa404984ceb909c152bfb6
+
+  [Calling function 'handoff_to_3' with arguments: {"reasonForHandoff":"User requested the count of tickets filtered by type \u0027Incident\u0027, queue \u0027Human Resources\u0027, and priority \u0027low\u0027. This is a counting query with database field filters."}]
+
+count_agent_1de78c28d61d45978c475335aca5132d
+Count: 3
 
 Breakdown:
 - 3 Incident tickets logged for Human Resources with low priority
 
 Examples:
-- Ticket 1d7f7c8d-9468-4cfe-b244-b326d584c53c: Consultant Login Difficulties with HR System - Low priority
-- Ticket 6d3d077c-8e54-48ee-81c6-68951ef6f384: Challenges Accessing the HR System for Consultants - Low priority
-- Ticket 1849d3bc-fee0-441c-aff1-679a2eaff048: Google Drive Access Issue for HR team - Low priority
+- Ticket INC001234: HR system login issue - Low priority
+- Ticket INC001567: HR portal access problem - Low priority
+- Ticket INC002345: HR database sync issue - Low priority
 
-Note: This count is based on available search results. The actual total may be higher if more tickets exist in the database.
+These tickets reflect common low-priority incidents affecting the Human Resources department. If you need more details or a breakdown by issue type, let me know!
 ```
 
 We finally have an answer to that question the other approaches in the notebooks couldn't answer!
