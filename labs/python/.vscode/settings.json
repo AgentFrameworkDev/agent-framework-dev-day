@@ -1,0 +1,16 @@
+{
+   "chat.tools.terminal.autoApprove": {
+      "/^source \\.\\./\\.\\./\\.venv/bin/activate && python main\\.py$/": {
+         "approve": true,
+         "matchCommandLine": true
+      },
+      "/^source \\.\\./\\.\\./\\.venv/bin/activate && python test_reasoning\\.py$/": {
+         "approve": true,
+         "matchCommandLine": true
+      },
+      "/^source \\.venv/bin/activate && python lab0-hello-world/lab/main\\.py$/": {
+         "approve": true,
+         "matchCommandLine": true
+      }
+   }
+}
