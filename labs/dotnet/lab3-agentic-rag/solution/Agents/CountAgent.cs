@@ -21,7 +21,20 @@ public static class CountAgent
         4. Give a brief breakdown or explanation
         5. Cite specific examples from the tickets using their IDs
 
+        Example response format:
+
+        Count: 3
+
+        Breakdown:
+        - 3 Incident tickets logged for Human Resources with low priority
+
+        Examples:
+        - Ticket INC001234: HR system login issue - Low priority
+        - Ticket INC001567: HR portal access problem - Low priority
+        - Ticket INC002345: HR database sync issue - Low priority
+
         Be precise with the count and base your answer strictly on the search results.
+        If the search doesn't return enough results to be confident, mention that the actual count might be higher.
         """;
 
     private static Func<string, Task<string>> CreateSearchFunction(SearchService searchService)

@@ -14,7 +14,7 @@ In the [Mintaka: A Complex, Natural, and Multilingual Dataset for End-to-End Que
 
 > COUNT: questions where the answer requires counting. For example, Q: How many astronauts have been elected to Congress? A: 4
 
-This question is different than the normal semantic search because we want a numeric result with an optional explaination.
+This question is different than the normal semantic search because we want a numeric result with an optional explanation.
 
 In our dataset some count questions could be:
 - "How many consultants have reported access problems?"

@@ -208,7 +208,7 @@ public Dictionary<string, AIAgent> CreateAllAgents()
 }
 ```
 
-8. Next, open the [Program.cs](Program.cs) file and find the two places the workflow is defined and modify it to the following:
+7. Next, open the [Program.cs](Program.cs) file and find the two places the workflow is defined and modify it to the following:
 ```c#
     var workflow = AgentWorkflowBuilder.CreateHandoffBuilderWith(agents["classifier"])
         .WithHandoffs(agents["classifier"], [agents["semantic_search"], agents["yes_no"]])
