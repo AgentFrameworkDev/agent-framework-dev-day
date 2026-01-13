@@ -12,6 +12,10 @@ These extensions provide specific workflows for building, testing, and deploying
 | **[Microsoft 365 Agents Toolkit](https://marketplace.visualstudio.com/items?itemName=TeamsDevApp.ms-teams-vscode-extension)** | Streamlines the creation of agents for Microsoft 365, including Copilot extensions and Teams bots. |
 | **[Azure AI Foundry](https://marketplace.visualstudio.com/items?itemName=TeamsDevApp.vscode-ai-foundry)** | Provides integration with Azure AI Foundry for managing AI assets and connecting to cloud resources. |
 
+## Python x .NET Development
+
+* **[Polyglot Notebooks](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.dotnet-interactive-vscode):** The "Notebooks" extension for multi-language support in notebook form.
+
 ## Python Development
 
 The standard stack for Python-based agent development.
