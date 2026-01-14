@@ -7,84 +7,83 @@ credentials via environment variables:
 """
 
 import asyncio
-import os
-from pathlib import Path
+import time
 
-from dotenv import load_dotenv
-from azure.identity.aio import DefaultAzureCredential
 from agent_framework.azure import AzureAIClient
-
-
-def load_root_dotenv(filename: str = ".env") -> Path:
-    """Walk up the directory tree to find and load a .env file."""
-    here = Path(__file__).resolve()
-    for d in [here.parent, *here.parents]:
-        candidate = d / filename
-        if candidate.is_file():
-            load_dotenv(candidate, override=False)
-            return candidate
-    raise FileNotFoundError(f"Could not find {filename} by walking up from {here}")
+from foundry_client_factory import get_configuration, get_random_deployment
 
 
 async def main() -> None:
-    # Load environment variables from .env file
-    env_path = load_root_dotenv()
-    print(f"Loaded environment from: {env_path}")
-
-    # Get configuration from environment variables
-    # Uses official Agent Framework env var naming convention
-    endpoint = os.environ.get("AZURE_AI_PROJECT_ENDPOINT")
-    if not endpoint:
-        raise ValueError("AZURE_AI_PROJECT_ENDPOINT environment variable is not set")
-
-    deployment = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME")
-    if not deployment:
-        raise ValueError("AZURE_AI_MODEL_DEPLOYMENT_NAME environment variable is not set")
+    # Load configuration from .env up above
+    config = get_configuration()
 
     print("Hello World Agent Framework Application")
     print("========================================")
-    print(f"Endpoint: {endpoint}")
-    print(f"Deployment: {deployment}")
+    print(f"Endpoint: {config.endpoint}")
+    print(f"Deployment: {config.deployment_name}")
+    print(f"Auth: {'Service Principal' if config.is_service_principal else 'Default Azure Credential'}")
     print()
 
-    # DefaultAzureCredential tries multiple authentication methods in order:
-    # 1. EnvironmentCredential (service principal via AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET)
-    # 2. WorkloadIdentityCredential (for Azure workloads)
-    # 3. ManagedIdentityCredential (for Azure-hosted apps)
-    # 4. AzureCliCredential (az login)
-    # 5. AzureDeveloperCliCredential (azd login)
-    # 6. AzurePowerShellCredential
-    # 7. InteractiveBrowserCredential (as fallback)
+    # Randomly select a model from available deployments (like C# version)
+    selected_model, underlying_model_name = await get_random_deployment(config)
+    print(f"Randomly selected model: {selected_model} ({underlying_model_name})")
+    print()
+
+    # AzureAIClient uses the Agent Framework pattern:
+    # - Uses the credential we provide (service principal or DefaultAzureCredential)
+    # - Uses the randomly selected model deployment
     async with (
-        DefaultAzureCredential() as credential,
-        AzureAIClient(credential=credential).create_agent(
+        config.credential,
+        AzureAIClient(
+            project_endpoint=config.endpoint,
+            model_deployment_name=selected_model,  # Use randomly selected model
+            credential=config.credential,
+        ).create_agent(
             name="HelloWorldAgent",
             instructions="You are a friendly assistant that gives concise responses.",
         ) as agent,
     ):
-        print(f"Agent 'HelloWorldAgent' created successfully!")
+        print(f"Agent 'HelloWorldAgent' created successfully! using model '{selected_model}'")
         print()
 
         # Send a simple prompt and get response
-        prompt = "Tell me one a joke or fact about .NET or Python!"
+        prompt = "Tell me one a joke OR interesting fact about .NET or Python!"
+        prompt = "In just one or two words, capture the vibe of Python developers..."
         print(f"User: {prompt}")
         print()
 
         # Run the agent (non-streaming to get token usage)
+        start_time = time.perf_counter()
         response = await agent.run(prompt)
+        elapsed_seconds = time.perf_counter() - start_time
 
         print(f"Agent: {response.text}")
         print()
 
-        # Display token usage information
+        # Display token usage information (matching C# format)
         print("========================================")
         print("Token Usage:")
         if hasattr(response, 'usage_details') and response.usage_details:
-            print(f"  Input Tokens:  {response.usage_details.input_token_count}")
-            print(f"  Output Tokens: {response.usage_details.output_token_count}")
-            print(f"  Total Tokens:  {response.usage_details.total_token_count}")
+            usage = response.usage_details
+            input_tokens = getattr(usage, 'input_token_count', 0) or 0
+            output_tokens = getattr(usage, 'output_token_count', 0) or 0
+            total_tokens = getattr(usage, 'total_token_count', 0) or 0
+
+            # Reasoning tokens are in additional_counts with key 'openai.reasoning_tokens'
+            reasoning_tokens = 0
+            if hasattr(usage, 'additional_counts') and usage.additional_counts:
+                reasoning_tokens = usage.additional_counts.get('openai.reasoning_tokens', 0)
+
+            print(f"  {input_tokens:6} Input Tokens")
+            print(f"+ {output_tokens:6} Output Tokens (including {reasoning_tokens} Reasoning Tokens)")
+            print(f"= {total_tokens:6} Total Tokens")
         else:
             print("  Token usage information not available")
+
+        print()
+        print("Models Used:")
+        print("========================================")
+        print(f"The model used by the agent was: {selected_model} ({underlying_model_name}) and took {elapsed_seconds:.2f} seconds.")
 
     # Agent cleanup is handled automatically by the async context manager
     print()
