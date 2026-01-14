@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>McpLocal</RootNamespace>
+    <AssemblyName>McpLocal</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Microsoft Agent Framework and MCP packages -->
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0-preview.4.25258.110" />
+    <PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.1" />
+  </ItemGroup>
+
+</Project>
