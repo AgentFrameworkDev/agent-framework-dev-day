@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>RemoteServer</RootNamespace>
+    <AssemblyName>RemoteServer</AssemblyName>
+  </PropertyGroup>
+
+  <!-- No MCP packages - this is a pure REST API server -->
+
+</Project>
