@@ -25,23 +25,19 @@ async def main() -> None:
     print()
 
     # Randomly select a model from available deployments (like C# version)
-    # Note: This creates its own credential internally
-    selected_model, underlying_model_name = await get_random_deployment()
+    selected_model, underlying_model_name = await get_random_deployment(config)
     print(f"Randomly selected model: {selected_model} ({underlying_model_name})")
     print()
-
-    # Get a fresh credential for the main client (previous one was closed)
-    fresh_config = get_configuration()
 
     # AzureAIClient uses the Agent Framework pattern:
     # - Uses the credential we provide (service principal or DefaultAzureCredential)
     # - Uses the randomly selected model deployment
     async with (
-        fresh_config.credential,
+        config.credential,
         AzureAIClient(
-            project_endpoint=fresh_config.endpoint,
+            project_endpoint=config.endpoint,
             model_deployment_name=selected_model,  # Use randomly selected model
-            credential=fresh_config.credential,
+            credential=config.credential,
         ).create_agent(
             name="HelloWorldAgent",
             instructions="You are a friendly assistant that gives concise responses.",
