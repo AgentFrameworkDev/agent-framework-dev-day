@@ -26,7 +26,7 @@ async def main() -> None:
     password = "𝒜𝒮𝒦 𝒴𝒪𝒰ℛ ℒ𝒜ℬ ℐ𝒩𝒮𝒯ℛ𝒰𝒞𝒯𝒪ℛ ℱ𝒪ℛ 𝒯ℋℰ 𝒫𝒜𝒮𝒮𝒲𝒪ℛ𝒟"
 
     # LAB STEP 1: CHANGE THE PASSWORD
-    password = "Patriots16-Chargers3-TexansNext"
+    # password = "replace this with the real password given by your lab instructor"
 
 
     # One-time configuration: decrypt settings and create .env
