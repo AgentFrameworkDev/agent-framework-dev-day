@@ -242,6 +242,13 @@ Select **1. Local MCP Server** and try these prompts:
 - "Update feature.darkMode to true"
 - "Get the updated configuration for feature.darkMode"
 
+**Test the AI Chat:** When prompted, enter:
+```
+whats in ticket LOCAL-001
+```
+
+The AI should use the MCP tools to retrieve and display the ticket information.
+
 ---
 
 ## Exercise 5: Connect to Remote MCP Server (HTTP/SSE)
@@ -294,6 +301,13 @@ Select **2. Remote MCP Server** and try these prompts:
 - "Get ticket TKT-001"
 - "Update ticket TKT-001 status to InProgress"
 - "Assign ticket TKT-003 to support-team"
+
+**Test the AI Chat:** When prompted, enter:
+```
+whats in ticket TKT-001
+```
+
+The AI should use the remote MCP tools to retrieve and display the ticket information via the REST API.
 
 ---
 

@@ -33,7 +33,16 @@ This lab demonstrates how to build and consume MCP (Model Context Protocol) serv
                               └─────────────────────────────────────────────┘
 ```
 
-## � Lab Exercises
+## 📓 Interactive Notebook
+
+To explore MCP concepts interactively, open and run the Jupyter notebook:
+```bash
+cd lab
+jupyter notebook mcp-concepts.ipynb
+```
+Or open `lab/mcp-concepts.ipynb` directly in VS Code.
+
+## 📝 Lab Exercises
 
 For hands-on exercises, see **[lab/EXERCISES.md](lab/EXERCISES.md)**.
 
