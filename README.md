@@ -5,24 +5,24 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 ## Agenda
 
 - Part 1 – Overview, first access (Lab 0), observability (OTel), safety, hosted agents
-- Part 2 – Retrieval-Augmented Generation (RAG) and Agentic RAG, Model Context Protocol (MCP)
-- Part 3 – Workflow patterns and additional MCP scenarios
+- Part 2 – Workflow patterns and Model Context Protocol (MCP)
+- Part 3 – Retrieval-Augmented Generation (RAG) and Agentic RAG
 
 ## Prerequisites
 
 ### Core workshop setup
-- Git 2.40+ and access to this repository
-- Visual Studio Code with the recommended extensions listed in [VSCode-Extensions.md](VSCode-Extensions.md)
+- [Git](https://git-scm.com/downloads) and [Github login](https://github.com)
+- [Visual Studio Code](https://code.visualstudio.com/download) with the recommended extensions listed in [VSCode-Extensions.md](VSCode-Extensions.md)
 - Azure subscription with access to Azure OpenAI and Azure AI Search resources, plus any API keys issued by the instructors
 - Stable internet connection for package restores and Azure access
 
 ### .NET track prerequisites
-- .NET 10 SDK (labs rely on .NET 10 features and templates)
-- Latest C# Dev Kit or C# extension plus the .NET runtime debugging workload in VS Code
+- [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download) (labs rely on .NET 10 features and templates)
+- Latest [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) or [C# extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) plus the .NET runtime debugging workload in VS Code
 - Follow the environment notes in [labs/dotnet/README.md](labs/dotnet/README.md) for per-lab debugging tips
 
 ### Python track prerequisites
-- Python 3.13 (exact version or newer point releases) with `pip` and `venv`
+- [Python 3.13 and PIP](https://www.python.org/downloads/) (exact version or newer point releases) with `pip` and `venv`
 - Create and activate a virtual environment under `labs/python`, then install shared dependencies via `pip install -r labs/python/requirements.txt`
 - Review [labs/python/README.md](labs/python/README.md) for detailed shell-specific setup steps
 
@@ -41,7 +41,7 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 | lab1-basic-training | Core agent patterns and incremental exercises (instructions inline in `lab/`; no README yet) | _README not provided_ |
 | lab2-mcp | Build local/remote MCP servers, run `mcp-concepts.ipynb`, wire up `McpAgentClient` | [labs/dotnet/lab2-mcp/README.md](labs/dotnet/lab2-mcp/README.md) |
 | lab2-workflow | Implement sequential, concurrent, and human-in-the-loop workflows with `Microsoft.Agents.AI.Workflows` | [labs/dotnet/lab2-workflow/README.md](labs/dotnet/lab2-workflow/README.md) |
-| lab3-agentic-rag | Agentic RAG scenarios with Azure AI Search and Agent Framework orchestration | [labs/dotnet/lab3-agentic-rag/lab/README.md](labs/dotnet/lab3-agentic-rag/lab/README.md), [labs/dotnet/lab3-agentic-rag/lab-bill-key-experiment/README.md](labs/dotnet/lab3-agentic-rag/lab-bill-key-experiment/README.md) |
+| lab3-agentic-rag | Agentic RAG scenarios with Azure AI Search and Agent Framework orchestration | [labs/dotnet/lab3-agentic-rag/lab/README.md](labs/dotnet/lab3-agentic-rag/lab/README.md) |
 
 > Each .NET lab also includes notebooks (for example, `mcp-concepts.ipynb`, `workflow-concepts.ipynb`) that can be launched directly from VS Code for guided exploration.
 
