@@ -11,12 +11,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.AI.OpenAI" Version="*-*" />
     <PackageReference Include="Azure.AI.Projects" Version="*-*" />
     <PackageReference Include="Azure.Identity" Version="*-*" />
     <PackageReference Include="Microsoft.Agents.AI.AzureAI" Version="*-*" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.*-*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.*-*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.*-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../../tools/LabKeyEncrypter/LabKeyEncrypter.Library/LabKeyEncrypter.Library.csproj" />
   </ItemGroup>
 
 </Project>
