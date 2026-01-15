@@ -167,9 +167,10 @@ Open `workflow_lab/sequential/demo.py` and uncomment:
 
 ### Verify
 
-Run the application and select option 1:
+Run the application and select option **1** (Sequential Workflow):
 ```bash
 python program.py
+# Enter choice: 1
 ```
 
 ---
@@ -199,7 +200,11 @@ Open `workflow_lab/concurrent/demo.py` and uncomment:
 
 ### Verify
 
-Run and select option 2. You should see responses from both experts combined.
+Run and select option **2** (Concurrent Workflow). You should see responses from both experts combined.
+```bash
+python program.py
+# Enter choice: 2
+```
 
 ---
 
@@ -229,7 +234,11 @@ Open `workflow_lab/human_in_the_loop/demo.py` and uncomment:
 
 ### Verify
 
-Run and select option 3. You'll be prompted to approve, edit, or escalate the AI draft.
+Run and select option **3** (Human-in-the-Loop Workflow). You'll be prompted to approve, edit, or escalate the AI draft.
+```bash
+python program.py
+# Enter choice: 3
+```
 
 ---
 

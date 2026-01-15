@@ -220,6 +220,13 @@ Select **1. Local MCP Server** and you should see:
 - UpdateConfig result
 - GetTicket result
 
+**Test the AI Chat:** When prompted, enter:
+```
+whats in ticket TICKET-001
+```
+
+The AI should use the MCP tools to retrieve and display the ticket information.
+
 ---
 
 ## Exercise 4: Connect to Remote MCP Server (HTTP/SSE)
@@ -274,6 +281,13 @@ Select **2. Remote MCP Server** and you should see:
 - Available tools listed
 - GetTicket result (from REST API)
 - UpdateTicket result (via REST API)
+
+**Test the AI Chat:** When prompted, enter:
+```
+whats in ticket TICKET-003
+```
+
+The AI should use the remote MCP tools to retrieve and display the ticket information via the REST API.
 
 ---
 

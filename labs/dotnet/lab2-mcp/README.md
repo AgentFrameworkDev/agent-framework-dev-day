@@ -8,7 +8,16 @@ This lab demonstrates how to build and consume MCP (Model Context Protocol) serv
 2. **Build Remote MCP Servers** - Using HTTP/SSE transport that calls REST APIs
 3. **Consume MCP Servers** - From AI Agents using Microsoft Agent Framework
 
-## 📝 Lab Exercises
+## � Interactive Notebook
+
+To explore MCP concepts interactively, open and run the Jupyter notebook:
+```bash
+cd lab
+jupyter notebook mcp-concepts.ipynb
+```
+Or open `lab/mcp-concepts.ipynb` directly in VS Code.
+
+## �📝 Lab Exercises
 
 For hands-on exercises, see **[lab/EXERCISES.md](lab/EXERCISES.md)**.
 
