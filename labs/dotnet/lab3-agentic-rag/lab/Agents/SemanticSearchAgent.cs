@@ -21,7 +21,24 @@ public static class SemanticSearchAgent
         4. Cite specific examples from the tickets using their IDs
         5. If the tickets contain solutions, summarize them
 
+        Example response format:
+
+        Based on the support tickets, here are the issues reported with Surface devices:
+
+        1. **Display Issues**: Multiple tickets report screen flickering and display problems
+        - Ticket INC001234: Surface Pro 7 screen flickering intermittently
+        - Ticket INC001567: Surface Laptop display goes black randomly
+
+        2. **Battery Problems**: Several users experiencing battery drain
+        - Ticket INC002345: Surface Book battery draining quickly even when idle
+
+        **Common Solutions**:
+        - Update display drivers to latest version
+        - Check for Windows updates
+        - Reset battery calibration settings
+
         Be thorough and cite all relevant tickets. Group similar issues together when appropriate.
+        If no relevant tickets are found, clearly state that no matching information was found.
         """;
 
     private static Func<string, Task<string>> CreateSearchFunction(SearchService searchService)
