@@ -34,6 +34,10 @@ Console.WriteLine();
 // The FindConfigPath helper finds the dotnet folder where config is stored
 // ============================================================================
 var configPath = FindConfigPath(AppContext.BaseDirectory);
+Console.WriteLine($"📁 Config path: {configPath}");
+Console.WriteLine($"📄 Config file: {Path.Combine(configPath, "appsettings.Local.json")}");
+Console.WriteLine();
+
 var configuration = new ConfigurationBuilder()
     .SetBasePath(configPath)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
@@ -49,6 +53,7 @@ var configuration = new ConfigurationBuilder()
 //     ?? throw new InvalidOperationException("Azure OpenAI endpoint is not set.");
 // 
 // var deploymentName = configuration["AZURE_OPENAI_DEPLOYMENT_NAME"]
+//     ?? configuration["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 //     ?? configuration["AzureOpenAI:DeploymentName"]
 //     ?? "gpt-4o-mini";
 
