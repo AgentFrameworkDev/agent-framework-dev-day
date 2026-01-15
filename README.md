@@ -28,7 +28,7 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 
 ## Repository layout
 
-- [labs/dotnet](labs/dotnet) – C# solutions covering hello-world onboarding through MCP, workflows, and Agentic RAG. Every lab folder contains both `/lab` (exercise) and `/solution` (reference) subfolders.
+- [labs/dotnet](labs/dotnet) – C# solutions covering hello-world onboarding through MCP, workflows, and Agentic RAG. Every lab folder contains both `/begin` (exercise) and `/solution` (reference) subfolders.
 - [labs/python](labs/python) – Python equivalents for MCP, workflow, and RAG scenarios, plus notebooks to reinforce concepts.
 - [tools](tools) – Utility projects (for example, LabKey encrypters) that support the hands-on exercises.
 - [VSCode-Extensions.md](VSCode-Extensions.md) – Canonical list of extensions, themes, and settings the instructors will reference.
@@ -37,11 +37,11 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 
 | Lab | Focus | Supplemental docs |
 | --- | ------ | ------------------ |
-| lab0-hello-world | Validate SDK install, run first Agent Framework project, explore solution vs. lab folders | [labs/dotnet/lab0-hello-world/README.md](labs/dotnet/lab0-hello-world/README.md) |
-| lab1-basic-training | Core agent patterns and incremental exercises (instructions inline in `lab/`; no README yet) | _README not provided_ |
+| lab0-hello-world | Validate SDK install, run first Agent Framework project, explore solution vs. begin folders | [labs/dotnet/lab0-hello-world/README.md](labs/dotnet/lab0-hello-world/README.md) |
+| lab1-basic-training | Core agent patterns and incremental exercises (instructions inline in `begin/`; no README yet) | _README not provided_ |
 | lab2-mcp | Build local/remote MCP servers, run `mcp-concepts.ipynb`, wire up `McpAgentClient` | [labs/dotnet/lab2-mcp/README.md](labs/dotnet/lab2-mcp/README.md) |
 | lab2-workflow | Implement sequential, concurrent, and human-in-the-loop workflows with `Microsoft.Agents.AI.Workflows` | [labs/dotnet/lab2-workflow/README.md](labs/dotnet/lab2-workflow/README.md) |
-| lab3-agentic-rag | Agentic RAG scenarios with Azure AI Search and Agent Framework orchestration | [labs/dotnet/lab3-agentic-rag/lab/README.md](labs/dotnet/lab3-agentic-rag/lab/README.md) |
+| lab3-agentic-rag | Agentic RAG scenarios with Azure AI Search and Agent Framework orchestration | [labs/dotnet/lab3-agentic-rag/begin/README.md](labs/dotnet/lab3-agentic-rag/begin/README.md) |
 
 > Each .NET lab also includes notebooks (for example, `mcp-concepts.ipynb`, `workflow-concepts.ipynb`) that can be launched directly from VS Code for guided exploration.
 
@@ -49,17 +49,17 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 
 | Lab | Focus | Supplemental docs |
 | --- | ------ | ------------------ |
-| lab0-hello-world | Environment smoke test and first Python agent (instructions inside `lab/`) | _README not provided_ |
-| lab1-basic-training | Progressive exercises reinforcing Agent Framework primitives (see `lab/` folder) | _README not provided_ |
+| lab0-hello-world | Environment smoke test and first Python agent (instructions inside `begin/`) | _README not provided_ |
+| lab1-basic-training | Progressive exercises reinforcing Agent Framework primitives (see `begin/` folder) | _README not provided_ |
 | lab2-mcp | Python MCP servers/clients plus `mcp-concepts.ipynb` | [labs/python/lab2-mcp/README.md](labs/python/lab2-mcp/README.md) |
 | lab2-workflow | Workflow patterns implemented with Python executors and notebooks | [labs/python/lab2-workflow/README.md](labs/python/lab2-workflow/README.md) |
-| lab3-agentic-rag | Agentic RAG build-out leveraging Azure AI Search tooling | [labs/python/lab3-agentic-rag/lab/README.md](labs/python/lab3-agentic-rag/lab/README.md) |
+| lab3-agentic-rag | Agentic RAG build-out leveraging Azure AI Search tooling | [labs/python/lab3-agentic-rag/begin/README.md](labs/python/lab3-agentic-rag/begin/README.md) |
 
 ## Additional references
 
 - Keep the [VSCode-Extensions.md](VSCode-Extensions.md) list close by when setting up your editor profiles.
-- Most labs provide `EXERCISES.md` within the `lab/` folder; switch to the `solution/` folder whenever you need a working reference.
-- Interactive notebooks live alongside the labs (for example, `labs/dotnet/lab2-mcp/lab/mcp-concepts.ipynb`). Run them in VS Code or Jupyter to validate your environment before coding.
+- Most labs provide `EXERCISES.md` within the `begin/` folder; switch to the `solution/` folder whenever you need a working reference.
+- Interactive notebooks live alongside the labs (for example, `labs/dotnet/lab2-mcp/begin/mcp-concepts.ipynb`). Run them in VS Code or Jupyter to validate your environment before coding.
 
 ## Presented by
 
