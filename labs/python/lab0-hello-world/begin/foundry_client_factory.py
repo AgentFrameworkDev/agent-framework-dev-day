@@ -539,6 +539,39 @@ async def list_available_deployments(
         await client.close()
 
 
+async def get_chat_completion_models(
+    config: FoundryClientConfiguration | None = None,
+) -> list[dict[str, str]]:
+    """
+    Get all chat-capable model deployments, filtering out non-chat models.
+
+    Filters out: embedding models, whisper, dall-e, tts, and other non-chat models.
+
+    Args:
+        config: Optional configuration. If None, calls get_configuration() to load automatically.
+
+    Returns:
+        List of deployment info dictionaries with 'name' and 'model' keys,
+        containing only chat-capable models.
+    """
+    deployments = await list_available_deployments(config)
+
+    # Filter out non-chat models (matching C# GetChatCompletionModels logic)
+    excluded_prefixes = (
+        "text-embedding",
+        "whisper",
+        "dall-e",
+        "tts",
+    )
+
+    chat_models = [
+        d for d in deployments
+        if not any(d["model"].lower().startswith(prefix) for prefix in excluded_prefixes)
+    ]
+
+    return chat_models
+
+
 async def get_random_deployment(
     config: FoundryClientConfiguration | None = None,
     chat_models_only: bool = True,
@@ -548,7 +581,7 @@ async def get_random_deployment(
 
     Args:
         config: Optional configuration. If None, calls get_configuration() to load automatically.
-        chat_models_only: If True, filter out embedding models. Defaults to True.
+        chat_models_only: If True, filter out non-chat models. Defaults to True.
 
     Returns:
         Tuple of (deployment_name, model_name).
@@ -558,14 +591,10 @@ async def get_random_deployment(
     """
     import random
 
-    deployments = await list_available_deployments(config)
-
     if chat_models_only:
-        # Filter out embedding models (they can't be used for chat)
-        deployments = [
-            d for d in deployments
-            if not d["model"].lower().startswith("text-embedding")
-        ]
+        deployments = await get_chat_completion_models(config)
+    else:
+        deployments = await list_available_deployments(config)
 
     if not deployments:
         raise ValueError("No model deployments available in the Azure AI Foundry project.")
