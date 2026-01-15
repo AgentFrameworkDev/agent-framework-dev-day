@@ -13,8 +13,8 @@ support tickets through a linear pipeline:
 import asyncio
 from openai import AzureOpenAI
 
-from ..common import SupportTicket, TicketPriority, create_chat_client
-from ..common.azure_openai_client_factory import get_deployment_name
+from common import SupportTicket, TicketPriority, create_chat_client
+from common.azure_openai_client_factory import get_deployment_name
 from .executors import (
     TicketIntakeExecutor,
     CategorizationBridgeExecutor,

@@ -12,8 +12,8 @@ specialist agents simultaneously (fan-out) and combines their responses (fan-in)
 import asyncio
 from openai import AzureOpenAI
 
-from ..common import create_chat_client
-from ..common.azure_openai_client_factory import get_deployment_name
+from common import create_chat_client
+from common.azure_openai_client_factory import get_deployment_name
 from .executors import (
     ConcurrentStartExecutor,
     ConcurrentAggregationExecutor,

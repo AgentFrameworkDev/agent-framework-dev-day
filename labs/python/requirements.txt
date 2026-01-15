@@ -4,7 +4,8 @@ python-dotenv
 azure-identity
 azure-ai-projects
 azure-search-documents
-azure.mgmt.cognitiveservices
+azure-mgmt-cognitiveservices
+azure-core
 
 # MCP Dependencies
 mcp
@@ -18,6 +19,7 @@ openai
 fastapi
 uvicorn
 pydantic
+starlette
 
 # Async support
 anyio

@@ -95,7 +95,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
 
 # SSE transport for HTTP/SSE connections
-sse_transport = SseServerTransport("/sse")
+sse_transport = SseServerTransport("/messages/")
 
 
 async def handle_sse(request):
@@ -106,6 +106,8 @@ async def handle_sse(request):
         await server.run(
             streams[0], streams[1], server.create_initialization_options()
         )
+    from starlette.responses import Response
+    return Response()
 
 
 async def handle_root(request):
@@ -119,10 +121,14 @@ async def handle_root(request):
 
 
 # Create Starlette app
+from starlette.routing import Mount
+from starlette.responses import Response
+
 app = Starlette(
     routes=[
         Route("/", handle_root),
-        Route("/sse", handle_sse),
+        Route("/sse", handle_sse, methods=["GET"]),
+        Mount("/messages/", app=sse_transport.handle_post_message),
     ]
 )
 
