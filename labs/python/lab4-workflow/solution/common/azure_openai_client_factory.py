@@ -24,7 +24,7 @@ def create_chat_client() -> AzureOpenAI:
     Raises:
         ValueError: If required configuration is missing
     """
-    # Get endpoint (required)
+    # Get endpoint (required) - check both possible env var names
     endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
     if not endpoint:
         raise ValueError(
@@ -32,9 +32,14 @@ def create_chat_client() -> AzureOpenAI:
             "Set 'AZURE_OPENAI_ENDPOINT' environment variable."
         )
     
-    # Get deployment name (optional, default: gpt-4o-mini)
-    deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
+    # Get deployment name - check both possible env var names
+    deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or \
+                 os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME") or \
+                 "gpt-4o-mini"
     api_version = "2024-02-15-preview"
+    
+    print(f"Using endpoint: {endpoint}")
+    print(f"Using deployment: {deployment}")
     
     # Option 1: API Key authentication
     api_key = os.environ.get("AZURE_OPENAI_API_KEY")
@@ -92,4 +97,6 @@ def create_chat_client() -> AzureOpenAI:
 
 def get_deployment_name() -> str:
     """Get the deployment name from environment or default."""
-    return os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
+    return os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or \
+           os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME") or \
+           "gpt-4o-mini"
