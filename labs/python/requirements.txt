@@ -1,4 +1,5 @@
-agent-framework-azure-ai
+agent-framework-azure-ai==1.0.0b260107
+agent-framework-core==1.0.0b260107
 python-dotenv
 azure-identity
 azure-ai-projects

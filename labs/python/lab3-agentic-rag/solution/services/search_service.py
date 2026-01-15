@@ -6,6 +6,7 @@ from typing import Any
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 from azure.search.documents.models import VectorizedQuery
+from azure.identity import get_bearer_token_provider
 from agent_framework.azure import AzureOpenAIChatClient
 from openai import AzureOpenAI
 
@@ -25,9 +26,15 @@ class SearchService:
         """
         self.config = config
         self.chat_client = chat_client
+
+        # Create a token provider that returns a fresh bearer token on each call
+        token_provider = get_bearer_token_provider(
+            config.credential,
+            "https://cognitiveservices.azure.com/.default",
+        )
+
         self.openai_client = AzureOpenAI(
-            azure_endpoint=config.openai_endpoiint,
-            api_key=config.openai_api_key,
+            azure_ad_token_provider=token_provider,
             api_version=config.openai_api_version
         )
         self.search_client = SearchClient(
