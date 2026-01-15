@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../../../../tools/LabKeyEncrypter/LabKeyEncrypter.Library/LabKeyEncrypter.Library.csproj" />
+  <Project Path="Lab1.csproj" />
+</Solution>
