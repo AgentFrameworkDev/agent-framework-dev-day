@@ -1,4 +1,4 @@
-# Lab 3 - Model Context Protocol (MCP) Workshop (Python)
+# Lab 2 - Model Context Protocol (MCP) Workshop (Python)
 
 This lab demonstrates how to build and consume MCP (Model Context Protocol) servers using Python.
 
@@ -37,21 +37,21 @@ This lab demonstrates how to build and consume MCP (Model Context Protocol) serv
 
 To explore MCP concepts interactively, open and run the Jupyter notebook:
 ```bash
-cd lab
+cd begin
 jupyter notebook mcp-concepts.ipynb
 ```
-Or open `lab/mcp-concepts.ipynb` directly in VS Code.
+Or open `begin/mcp-concepts.ipynb` directly in VS Code.
 
 ## 📝 Lab Exercises
 
-For hands-on exercises, see **[lab/EXERCISES.md](lab/EXERCISES.md)**.
+For hands-on exercises, see **[begin/EXERCISES.md](begin/EXERCISES.md)**.
 
 ## 📁 Project Structure
 
 ```
-lab3-mcp/
+lab2-mcp/
 ├── README.md
-├── lab/                          # Lab exercises (incomplete code)
+├── begin/                          # Lab exercises (incomplete code)
 │   ├── EXERCISES.md              # Step-by-step exercises
 │   └── ...                       # Code to complete
 ├── solution/                     # Complete working solution
@@ -109,7 +109,7 @@ source .venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 
 # Navigate to the lab
-cd lab3-mcp
+cd lab2-mcp
 ```
 
 ### Configuration

@@ -24,22 +24,31 @@ Command Palette → "Python: Select Interpreter"
 You can then adjust as needed, or just observe an cancel with ESC key.
 
 ## Windows (Command Prompt)
-
 ```console
-# from .../labs/python
+# from .../labs/python, create the virtual environment
 python -m venv .venv
+
+# next activate the environment
 .venv\Scripts\activate
-# command prompt is now (.venv)
+
+# command prompt shows (.venv) before the folder path
+
+# now install all dependencies
 pip install -r requirements.txt
 ```console
 
 ## Windows (PowerShell)
 
 ```PowerShell
-# from .../labs/python
+# from .../labs/python, create the virtual environment
 python -m venv .venv
-env\Scripts\Activate.ps1
-# command prompt is now (.venv)
+
+# next activate the environment
+.venv\Scripts\Activate.ps1
+
+# command prompt shows (.venv) before the folder path
+
+# now install all dependencies
 pip install -r requirements.txt
 ```
 
@@ -52,12 +61,16 @@ CopySet-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ## Mac, Linux
 
 ```console
-# from .../labs/python
+# from .../labs/python, create the virtual environment
 python -m venv .venv
+
+# next activate the environment
 source .venv/bin/activate
-# command prompt is now (.venv)
+
+# command prompt shows (.venv) before the folder path
+
+# now install all dependencies
 pip install -r requirements.txt
-# this changes prompt to (.venv)
 ```
 
 ## Start Labs

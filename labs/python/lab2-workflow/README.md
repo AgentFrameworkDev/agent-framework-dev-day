@@ -1,4 +1,4 @@
-# Lab 4: AI Workflow Patterns - Python
+# Lab 2: AI Workflow Patterns - Python
 
 This lab demonstrates three key workflow patterns for building AI applications using Python with Azure OpenAI.
 
@@ -6,22 +6,22 @@ This lab demonstrates three key workflow patterns for building AI applications u
 
 To explore workflow concepts interactively, open and run the Jupyter notebook:
 ```bash
-cd lab
+cd begin
 jupyter notebook workflow-concepts.ipynb
 ```
-Or open `lab/workflow-concepts.ipynb` directly in VS Code.
+Or open `begin/workflow-concepts.ipynb` directly in VS Code.
 
 ## 📝 Lab Exercises
 
-For hands-on exercises, see **[lab/EXERCISES.md](lab/EXERCISES.md)**.
+For hands-on exercises, see **[begin/EXERCISES.md](begin/EXERCISES.md)**.
 
 ## 📁 Project Structure
 
 ```
-lab4-workflow/
+lab2-workflow/
 ├── program.py                    # Main entry point
 ├── README.md                     # This file
-├── lab/                          # Lab exercises (incomplete code)
+├── begin/                          # Lab exercises (incomplete code)
 │   ├── EXERCISES.md              # Step-by-step exercises
 │   └── ...                       # Code to complete
 ├── solution/                     # Complete working solution
@@ -120,7 +120,7 @@ cd labs/python
 pip install -r requirements.txt
 
 # Navigate to the lab
-cd lab4-workflow
+cd lab2-workflow
 ```
 
 ### Configuration
