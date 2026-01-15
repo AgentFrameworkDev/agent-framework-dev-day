@@ -1,5 +1,6 @@
 using Azure;
 using Azure.AI.OpenAI;
+using Azure.Identity;
 using Lab3.Agents;
 using Lab3.Config;
 using Lab3.Services;
@@ -39,8 +40,8 @@ class Program
 
         // Load and validate configuration
         Console.WriteLine("\n[1/5] Loading configuration...");
-        var configuration = BuildConfiguration();
-        var config = AzureConfig.FromConfiguration(configuration);
+        BuildConfiguration();
+        var config = AzureConfig.FromConfiguration();
 
         try
         {
@@ -57,7 +58,7 @@ class Program
         Console.WriteLine("\n[2/5] Initializing Azure OpenAI client...");
         var chatClient = new AzureOpenAIClient(
                     new Uri(config.OpenAIEndpoint),
-                    new AzureKeyCredential(config.OpenAIApiKey)
+                    new DefaultAzureCredential()
                  )
                 .GetChatClient(config.ChatModel);
         Console.WriteLine("✓ Chat client initialized");
@@ -121,13 +122,13 @@ class Program
         Console.WriteLine("\nType 'quit' or 'exit' to end the session\n");
 
         // Initialize system
-        var configuration = BuildConfiguration();
-        var config = AzureConfig.FromConfiguration(configuration);
+        BuildConfiguration();
+        var config = AzureConfig.FromConfiguration();
         config.Validate();
 
         var chatClient = new AzureOpenAIClient(
                             new Uri(config.OpenAIEndpoint),
-                            new AzureKeyCredential(config.OpenAIApiKey)
+                            new DefaultAzureCredential()
                          )
                         .GetChatClient(config.ChatModel);
 
@@ -210,14 +211,42 @@ class Program
         return [];
     }
 
-    static IConfiguration BuildConfiguration()
-    {
-        var builder = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
-            .AddUserSecrets<Program>(optional: true);
 
-        return builder.Build();
+    static string? FindConfigDirectory(string fileName)
+    {
+        var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, fileName)))
+            {
+                return directory.FullName;
+            }
+            directory = directory.Parent;
+        }
+
+        return null;
+    }
+    public const string DefaultConfigFileName = "appsettings.Local.json";
+    static void BuildConfiguration()
+    {
+        var basePath = FindConfigDirectory(DefaultConfigFileName)
+            ?? throw new InvalidOperationException(
+                $"Could not find {DefaultConfigFileName} in current directory or any parent directory.");
+
+        // Load configuration from appsettings.json
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(basePath)
+            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true) // Optional environment-specific settings
+            .AddEnvironmentVariables()
+            .Build();
+
+        foreach (var kvp in configuration.AsEnumerable())
+        {
+            if (!string.IsNullOrEmpty(kvp.Value))
+            {
+                Environment.SetEnvironmentVariable(kvp.Key, kvp.Value);
+            }
+        }
     }
 }
