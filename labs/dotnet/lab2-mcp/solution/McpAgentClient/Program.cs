@@ -17,6 +17,10 @@ Console.WriteLine("=============================================================
 Console.WriteLine();
 
 var configPath = FindConfigPath(AppContext.BaseDirectory);
+Console.WriteLine($"📁 Config path: {configPath}");
+Console.WriteLine($"📄 Config file: {Path.Combine(configPath, "appsettings.Local.json")}");
+Console.WriteLine();
+
 // Build configuration from appsettings.Local.json and environment variables
 // The config file is copied to the output directory during build
 var configuration = new ConfigurationBuilder()
@@ -31,6 +35,7 @@ var endpoint = configuration["AZURE_OPENAI_ENDPOINT"]
     ?? throw new InvalidOperationException("Azure OpenAI endpoint is not set. Set AZURE_OPENAI_ENDPOINT environment variable or AzureOpenAI:Endpoint in appsettings.json.");
 
 var deploymentName = configuration["AZURE_OPENAI_DEPLOYMENT_NAME"]
+    ?? configuration["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
     ?? configuration["AzureOpenAI:DeploymentName"]
     ?? "gpt-4o-mini";
 

@@ -19,6 +19,12 @@ using WorkflowLab.HumanInTheLoop;
 /// All demos use a Customer Support Ticket System as the example scenario.
 /// </summary>
 
+// Display config path at startup
+var configPath = FindConfigPath(AppContext.BaseDirectory);
+Console.WriteLine($"📁 Config path: {configPath}");
+Console.WriteLine($"📄 Config file: {Path.Combine(configPath, "appsettings.Local.json")}");
+Console.WriteLine();
+
 Console.WriteLine("=====================================================================");
 Console.WriteLine("                        WORKFLOW LAB                                 ");
 Console.WriteLine("            Microsoft.Agents.AI Workflow Patterns                    ");
@@ -98,4 +104,22 @@ while (true)
     Console.WriteLine("=====================================================================");
     Console.WriteLine();
     Console.WriteLine("Run another demo? (1-3 or Q to exit)");
+}
+
+static string FindConfigPath(string startPath)
+{
+    var currentDir = new DirectoryInfo(startPath);
+
+    // Traverse up to find the 'dotnet' folder
+    while (currentDir != null)
+    {
+        if (currentDir.Name.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+        {
+            return currentDir.FullName;
+        }
+        currentDir = currentDir.Parent;
+    }
+
+    // Fallback to start path if dotnet folder not found
+    return startPath;
 }
