@@ -5,12 +5,18 @@ This server exposes MCP tools over HTTP/SSE that call the REST API backend.
 """
 import asyncio
 import httpx
+from pathlib import Path
+from dotenv import load_dotenv
 from mcp.server import Server
 from mcp.server.sse import SseServerTransport
 from mcp.types import Tool, TextContent
 from starlette.applications import Starlette
 from starlette.routing import Route
 from starlette.responses import JSONResponse
+
+# Load .env file from labs/python folder
+env_path = Path(__file__).parent.parent.parent.parent / '.env'
+load_dotenv(env_path)
 
 # REST API base URL
 REST_API_URL = "http://localhost:5060"
@@ -91,7 +97,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
 
 # SSE transport for HTTP/SSE connections
-sse_transport = SseServerTransport("/sse")
+sse_transport = SseServerTransport("/messages/")
 
 
 async def handle_sse(request):
@@ -102,6 +108,7 @@ async def handle_sse(request):
         await server.run(
             streams[0], streams[1], server.create_initialization_options()
         )
+    return Response()
 
 
 async def handle_root(request):
@@ -115,10 +122,14 @@ async def handle_root(request):
 
 
 # Create Starlette app
+from starlette.routing import Mount
+from starlette.responses import Response
+
 app = Starlette(
     routes=[
         Route("/", handle_root),
-        Route("/sse", handle_sse),
+        Route("/sse", handle_sse, methods=["GET"]),
+        Mount("/messages/", app=sse_transport.handle_post_message),
     ]
 )
 
