@@ -12,7 +12,7 @@ with human review in the middle.
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from ..common import SupportTicket
+from common import SupportTicket
 from .models import SupervisorReviewRequest, SupervisorDecision, ReviewAction
 
 

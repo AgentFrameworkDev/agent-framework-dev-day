@@ -16,11 +16,57 @@ import asyncio
 import os
 import sys
 import json
+from pathlib import Path
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.sse import sse_client
 from openai import AzureOpenAI
 from azure.identity import AzureCliCredential
+
+
+def find_config_path(start_path: str) -> str:
+    """Find the 'python' folder by traversing up from start_path."""
+    current_dir = Path(start_path)
+    
+    while current_dir is not None:
+        if current_dir.name.lower() == "python":
+            return str(current_dir)
+        if current_dir.parent == current_dir:
+            break
+        current_dir = current_dir.parent
+    
+    # Fallback to start path if python folder not found
+    return start_path
+
+
+def load_env_file(env_path: str) -> dict:
+    """Load environment variables from .env file (JSON format)."""
+    env_file = Path(env_path) / ".env"
+    
+    if not env_file.exists():
+        return {}
+    
+    try:
+        with open(env_file, 'r') as f:
+            content = f.read()
+            env_vars = json.loads(content)
+            
+            # Set environment variables
+            for key, value in env_vars.items():
+                os.environ[key] = str(value)
+            
+            return env_vars
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"Warning: Failed to load .env file: {e}")
+        return {}
+
+
+# Load environment variables from .env file
+config_path = find_config_path(os.path.dirname(os.path.abspath(__file__)))
+env_vars = load_env_file(config_path)
+if env_vars:
+    print(f"Loaded {len(env_vars)} environment variables from: {config_path}/.env")
+
 
 print("=" * 60)
 print("       MCP Workshop - Agent Client Demo (Python)")
@@ -36,7 +82,9 @@ print()
 # Uncomment the lines below to read from environment variables
 # ============================================================================
 # endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
-# deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
+# deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or \
+#              os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME") or \
+#              "gpt-4o-mini"
 # 
 # if not endpoint:
 #     raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is not set")
