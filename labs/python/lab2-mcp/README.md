@@ -1,4 +1,4 @@
-# Lab 3 - Model Context Protocol (MCP) Workshop (Python)
+# Lab 2 - Model Context Protocol (MCP) Workshop (Python)
 
 This lab demonstrates how to build and consume MCP (Model Context Protocol) servers using Python.
 

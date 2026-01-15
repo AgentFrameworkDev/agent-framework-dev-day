@@ -1,4 +1,4 @@
-# Lab 4: AI Workflow Patterns - Python
+# Lab 2: AI Workflow Patterns - Python
 
 This lab demonstrates three key workflow patterns for building AI applications using Python with Azure OpenAI.
 
