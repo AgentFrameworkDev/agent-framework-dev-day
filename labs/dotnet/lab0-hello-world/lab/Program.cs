@@ -11,6 +11,18 @@ public static class Program
 {
    public static async Task Main(string[] args)
    {
+      // Parse command-line arguments
+      var verbose = args.Any(a => string.Equals(a, "--verbose", StringComparison.OrdinalIgnoreCase) || string.Equals(a, "-v", StringComparison.OrdinalIgnoreCase));
+      var force = args.Any(a => string.Equals(a, "--force", StringComparison.OrdinalIgnoreCase) || string.Equals(a, "--overwrite", StringComparison.OrdinalIgnoreCase));
+
+      // --------- FIRST STEP ----------
+      // ASK LAB INSTRUCTOR FOR THE PASSWORD
+      var password = "𝒜𝒮𝒦 𝒴𝒪𝒰ℛ ℒ𝒜ℬ ℐ𝒩𝒮𝒯ℛ𝒰𝒞𝒯𝒪ℛ ℱ𝒪ℛ 𝒯ℋℰ 𝒫𝒜𝒮𝒮𝒲𝒪ℛ𝒟";
+      // LAB STEP 1: CHANGE THE PASSWORD
+
+      var configger = new ConfigureLabKeys(password, verbose);
+      configger.RandomizeDecryptDistribute(overwriteExisting: force);
+
       // Load configuration and create client using the factory
       var config = FoundryClientFactory.GetConfiguration();
       var aiProjectClient = FoundryClientFactory.CreateProjectClient(config);

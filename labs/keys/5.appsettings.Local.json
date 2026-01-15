@@ -1,0 +1,20 @@
+{
+  "AZURE_AI_PROJECT_ENDPOINT": "https://proj-afp5-resource.services.ai.azure.com/api/projects/proj-afp5",
+  "AZURE_OPENAI_ENDPOINT": "https://proj-afp5-resource.openai.azure.com/",
+  "AZURE_OPENAI_CHAT_DEPLOYMENT_NAME": "gpt-4.1",
+  "AzureSearch": {
+    "Endpoint": "https://srcjan2026afworkshop.search.windows.net",
+    "ApiKey": "i2fCNNSk4ZaPTNpSwhplluZ4Qhg2IcOSJbHz5X6ElWAzSeC0kjU5",
+    "IndexName": "support-tickets"
+  },
+  "AZURE_SEARCH_ENDPOINT": "https://srcjan2026afworkshop.search.windows.net",
+  "AZURE_SEARCH_API_KEY": "i2fCNNSk4ZaPTNpSwhplluZ4Qhg2IcOSJbHz5X6ElWAzSeC0kjU5",
+  "AZURE_SEARCH_INDEX_NAME": "support-tickets",
+  "AZURE_OPENAI_EMBEDDING_DEPLOYMENT": "text-embedding-ada-002",
+  "AZURE_OPENAI_API_VERSION": "2024-02-01",
+  "MY_INITIALS": "jah",
+  "AZURE_AI_MODEL_DEPLOYMENT_NAME": "gpt-4.1-mini",
+  "AZURE_TENANT_ID": "5c369887-a4a0-4a67-a8d6-a78e017216fc",
+  "AZURE_CLIENT_ID": "4795fbb0-3cdc-4216-a202-4aeb8879303e",
+  "AZURE_CLIENT_SECRET": "a6m8Q~FcOGkFRRGZEWR64bSfiuy8QPxgYkyrmaBw"
+}
