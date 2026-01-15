@@ -7,13 +7,32 @@ credentials via environment variables:
 """
 
 import asyncio
+import sys
 import time
 
 from agent_framework.azure import AzureAIClient
 from foundry_client_factory import get_configuration, get_random_deployment
+from configure_lab_keys import ConfigureLabKeys
 
 
 async def main() -> None:
+    # Parse command-line arguments
+    verbose = "--verbose" in sys.argv or "-v" in sys.argv
+    force = "--force" in sys.argv or "--overwrite" in sys.argv
+
+    # --------- FIRST STEP ----------
+    # ASK LAB INSTRUCTOR FOR THE PASSWORD
+    # password = "\U0001d49c\U0001d4ae\U0001d4a6 \U0001d4b4\U0001d4aa\U0001d4b0\u211b \u2112\U0001d49c\u212c \u2110\U0001d4a9\U0001d4ae\U0001d4af\u211b\U0001d4b0\U0001d49e\U0001d4af\U0001d4aa\u211b \u2131\U0001d4aa\u211b \U0001d4af\u210b\u2130 \U0001d4ab\U0001d49c\U0001d4ae\U0001d4ae\U0001d4b2\U0001d4aa\u211b\U0001d49f"
+    password = "𝒜𝒮𝒦 𝒴𝒪𝒰ℛ ℒ𝒜ℬ ℐ𝒩𝒮𝒯ℛ𝒰𝒞𝒯𝒪ℛ ℱ𝒪ℛ 𝒯ℋℰ 𝒫𝒜𝒮𝒮𝒲𝒪ℛ𝒟"
+
+    # LAB STEP 1: CHANGE THE PASSWORD
+    password = "Patriots16-Chargers3-TexansNext"
+
+
+    # One-time configuration: decrypt settings and create .env
+    configger = ConfigureLabKeys(password, verbose)
+    configger.randomize_decrypt_distribute(overwrite_existing=force)
+
     # Load configuration from .env up above
     config = get_configuration()
 
