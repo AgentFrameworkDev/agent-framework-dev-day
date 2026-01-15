@@ -7,7 +7,7 @@ Contains executor classes for the human-in-the-loop workflow pattern.
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from ..common import SupportTicket
+from common import SupportTicket
 from .models import SupervisorReviewRequest, SupervisorDecision, ReviewAction
 
 
