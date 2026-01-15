@@ -11,25 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="appsettings.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="appsettings.Local.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Azure.AI.Projects" Version="*-*" />
     <PackageReference Include="Azure.Identity" Version="*-*" />
     <PackageReference Include="Azure.Search.Documents" Version="*-*" />
-	<PackageReference Include="Azure.AI.OpenAI" Version="*-*" />
-    <PackageReference Include="Microsoft.Agents.AI.Workflows" Version="*-*" />
-	<PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="*-*" />
+    <PackageReference Include="Azure.AI.OpenAI" Version="*-*" />
+    <PackageReference Include="Microsoft.Agents.AI.Workflows" Version="1.0.0-preview.260108.1" />
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.260108.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.*-*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.*-*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.*-*" />
