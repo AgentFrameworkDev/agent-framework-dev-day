@@ -252,8 +252,8 @@ public static class Program
 
       // Print header
       Console.WriteLine();
-      Console.WriteLine($"{"MODEL".PadRight(maxModelLen)}  {"IN",5}  {"OUT",5}  {"(INF)",5}  {"TOTAL",6}  {"SECS",6}  RESPONSE");
-      Console.WriteLine(new string('=', maxModelLen + 5 + 5 + 5 + 6 + 6 + maxResponseLen + 14));
+      Console.WriteLine($"{"MODEL".PadRight(maxModelLen)}  {"IN",5}  {"OUT",5}  {"(REAS)",6}  {"TOTAL",6}  {"SECS",6}  RESPONSE");
+      Console.WriteLine(new string('=', maxModelLen + 5 + 5 + 6 + 6 + 6 + maxResponseLen + 14));
 
       // Print each result
       foreach (var result in results)
@@ -263,17 +263,17 @@ public static class Program
          if (result.Success)
          {
             var response = TruncateResponse(result.Response, maxResponseLen);
-            Console.WriteLine($"{model}  {result.InputTokens,5}  {result.OutputTokens,5}  {result.InferenceTokens,5}  {result.TotalTokens,6}  {result.Seconds,6:F2}  {response}");
+            Console.WriteLine($"{model}  {result.InputTokens,5}  {result.OutputTokens,5}  {result.InferenceTokens,6}  {result.TotalTokens,6}  {result.Seconds,6:F2}  {response}");
          }
          else
          {
             var errorMsg = TruncateResponse($"ERROR: {result.ErrorMessage}", maxResponseLen);
-            Console.WriteLine($"{model}  {"--",5}  {"--",5}  {"--",5}  {"--",6}  {"--",6}  {errorMsg}");
+            Console.WriteLine($"{model}  {"--",5}  {"--",5}  {"--",6}  {"--",6}  {"--",6}  {errorMsg}");
          }
       }
 
       Console.WriteLine();
-      Console.WriteLine("Legend: IN=Input Tokens, OUT=Output Tokens, (INF)=Inference/Reasoning Tokens, TOTAL=Total Tokens, SECS=Runtime");
+      Console.WriteLine("Legend: IN=Input Tokens, OUT=Output Tokens, (REAS)=Reasoning Tokens, TOTAL=Total Tokens, SECS=Runtime");
    }
 
    /// <summary>

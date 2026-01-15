@@ -1,4 +1,0 @@
-{
-  "git.openRepositoryInParentFolders": "always",
-  "dotnet.defaultSolution": "Labs.slnx",
-}
