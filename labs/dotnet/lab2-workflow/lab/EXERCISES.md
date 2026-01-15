@@ -119,9 +119,10 @@ Open `Sequential/SequentialWorkflowDemo.cs` and uncomment:
 
 ### Verify
 
-Run the application and select option 1:
+Run the application and select option **1** (Sequential Workflow):
 ```bash
 dotnet run
+# Enter choice: 1
 ```
 
 You should see the ticket processed through categorization and response generation.
@@ -153,7 +154,11 @@ Open `Concurrent/ConcurrentWorkflowDemo.cs` and uncomment:
 
 ### Verify
 
-Run and select option 2. You should see responses from both experts combined.
+Run and select option **2** (Concurrent Workflow). You should see responses from both experts combined.
+```bash
+dotnet run
+# Enter choice: 2
+```
 
 ---
 
@@ -183,7 +188,11 @@ Open `HumanInTheLoop/HumanInTheLoopWorkflowDemo.cs` and uncomment:
 
 ### Verify
 
-Run and select option 3. You'll be prompted to approve, edit, or escalate the AI draft.
+Run and select option **3** (Human-in-the-Loop Workflow). You'll be prompted to approve, edit, or escalate the AI draft.
+```bash
+dotnet run
+# Enter choice: 3
+```
 
 ---
 

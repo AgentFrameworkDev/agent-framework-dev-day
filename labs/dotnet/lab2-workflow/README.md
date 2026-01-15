@@ -8,7 +8,16 @@ This lab demonstrates three key workflow patterns using **Microsoft.Agents.AI.Wo
 2. **Concurrent Workflow** - Fan-out to multiple agents simultaneously
 3. **Human-in-the-Loop Workflow** - AI assistance with human oversight and approval
 
-## 📝 Lab Exercises
+## � Interactive Notebook
+
+To explore workflow concepts interactively, open and run the Jupyter notebook:
+```bash
+cd lab
+jupyter notebook workflow-concepts.ipynb
+```
+Or open `lab/workflow-concepts.ipynb` directly in VS Code.
+
+## �📝 Lab Exercises
 
 For hands-on exercises, see **[lab/EXERCISES.md](lab/EXERCISES.md)**.
 
