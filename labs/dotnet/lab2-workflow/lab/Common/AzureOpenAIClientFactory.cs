@@ -23,21 +23,62 @@ namespace WorkflowLab.Common;
 public static class AzureOpenAIClientFactory
 {
     private static IConfiguration? _configuration;
+    private static string? _configPath;
 
     /// <summary>
-    /// Gets the configuration, loading from appsettings.json and environment variables.
+    /// Gets the configuration, loading from appsettings.Local.json in the dotnet folder and environment variables.
     /// </summary>
-    private static IConfiguration Configuration => _configuration ??= new ConfigurationBuilder()
-        .SetBasePath(AppContext.BaseDirectory)
-        .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
-        .AddEnvironmentVariables()
-        .Build();
+    private static IConfiguration Configuration
+    {
+        get
+        {
+            if (_configuration == null)
+            {
+                _configPath = FindConfigPath(AppContext.BaseDirectory);
+                _configuration = new ConfigurationBuilder()
+                    .SetBasePath(_configPath)
+                    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+                    .AddEnvironmentVariables()
+                    .Build();
+            }
+            return _configuration;
+        }
+    }
+
+    /// <summary>
+    /// Finds the dotnet folder by traversing up the directory tree.
+    /// </summary>
+    private static string FindConfigPath(string startPath)
+    {
+        var currentDir = new DirectoryInfo(startPath);
+
+        // Traverse up to find the 'dotnet' folder
+        while (currentDir != null)
+        {
+            if (currentDir.Name.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+            {
+                return currentDir.FullName;
+            }
+            currentDir = currentDir.Parent;
+        }
+
+        // Fallback to start path if dotnet folder not found
+        return startPath;
+    }
 
     /// <summary>
     /// Creates an Azure OpenAI chat client with support for multiple authentication methods.
     /// </summary>
     public static IChatClient CreateChatClient()
     {
+        // Force configuration loading to set _configPath
+        _ = Configuration;
+        
+        // Display config location
+        Console.WriteLine($"📁 Config path: {_configPath}");
+        Console.WriteLine($"📄 Config file: {Path.Combine(_configPath ?? "", "appsettings.Local.json")}");
+        Console.WriteLine();
+
         // ============================================================================
         // STEP 1.1: Get endpoint from configuration
         // Uncomment the lines below to read the endpoint
@@ -52,13 +93,21 @@ public static class AzureOpenAIClientFactory
 
         // ============================================================================
         // STEP 1.2: Get deployment name from configuration
-        // Uncomment the line below
+        // Uncomment the lines below
         // ============================================================================
-        // var deploymentName = GetConfigValue("AzureOpenAI:DeploymentName", "AZURE_OPENAI_DEPLOYMENT_NAME") 
+        // var deploymentName = Configuration["AZURE_OPENAI_DEPLOYMENT_NAME"] 
+        //     ?? Configuration["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
+        //     ?? Configuration["AzureOpenAI:DeploymentName"]
         //     ?? "gpt-4o-mini";
 
         // Placeholder - REMOVE after uncommenting above
         var deploymentName = "gpt-4o-mini";
+
+        // Display loaded values (uncomment after completing Step 1.1 and 1.2)
+        // Console.WriteLine($"✅ Configuration loaded");
+        // Console.WriteLine($"   Endpoint: {endpoint}");
+        // Console.WriteLine($"   Deployment: {deploymentName}");
+        // Console.WriteLine();
 
         // ============================================================================
         // STEP 1.3: Create the client with authentication
@@ -99,10 +148,26 @@ public static class AzureOpenAIClientFactory
     }
 
     /// <summary>
-    /// Gets a configuration value, checking appsettings.json key first, then environment variable.
+    /// Gets a configuration value, checking environment variable first, then config keys.
+    /// Environment variables take precedence if both are set.
     /// </summary>
-    private static string? GetConfigValue(string configKey, string envVarName)
+    private static string? GetConfigValue(string appSettingsKey, string environmentVariable)
     {
-        return Configuration[envVarName] ?? Configuration[configKey];
+        // Check environment variable first (highest precedence)
+        var envValue = Environment.GetEnvironmentVariable(environmentVariable);
+        if (!string.IsNullOrEmpty(envValue))
+        {
+            return envValue;
+        }
+
+        // Check config file with environment variable key (e.g., AZURE_OPENAI_ENDPOINT)
+        var configEnvValue = Configuration[environmentVariable];
+        if (!string.IsNullOrEmpty(configEnvValue))
+        {
+            return configEnvValue;
+        }
+
+        // Fall back to nested config key (e.g., AzureOpenAI:Endpoint)
+        return Configuration[appSettingsKey];
     }
 }
