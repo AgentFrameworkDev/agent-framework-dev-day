@@ -18,7 +18,7 @@ For hands-on exercises, see **[begin/EXERCISES.md](begin/EXERCISES.md)**.
 ## 📁 Project Structure
 
 ```
-lab4-workflow/
+lab2-workflow/
 ├── program.py                    # Main entry point
 ├── README.md                     # This file
 ├── begin/                          # Lab exercises (incomplete code)
