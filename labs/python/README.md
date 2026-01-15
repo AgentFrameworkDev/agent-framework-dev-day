@@ -7,6 +7,10 @@ Before entering a specific lab folder:
 3. install common dependencies (one line)
 4. `cd` into a lab folder and start coding!
 
+### Tip: one line version for Mac
+
+python -m venv .venv ; source .venv/bin/activate ; pip install -r requirements.txt
+
 ## Accept VS Code's offer to select the new Python environment
 
 After you run `python -m venv .venv` (see instructions below) VS Code may pop up the following, to which we recommend you answer **Yes**.

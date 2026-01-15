@@ -20,4 +20,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.*-*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../../../../tools/LabKeyEncrypter/LabKeyEncrypter.Library/LabKeyEncrypter.Library.csproj" />
+  </ItemGroup>
+
 </Project>
