@@ -17,8 +17,8 @@ import asyncio
 from typing import Callable
 from openai import AzureOpenAI
 
-from ..common import SupportTicket, TicketPriority, create_chat_client
-from ..common.azure_openai_client_factory import get_deployment_name
+from common import SupportTicket, TicketPriority, create_chat_client
+from common.azure_openai_client_factory import get_deployment_name
 from .models import SupervisorReviewRequest, SupervisorDecision, ReviewAction
 from .executors import (
     HumanInTheLoopTicketIntakeExecutor,
