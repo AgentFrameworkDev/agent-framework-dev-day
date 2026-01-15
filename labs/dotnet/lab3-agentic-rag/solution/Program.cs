@@ -1,5 +1,6 @@
 using Azure;
 using Azure.AI.OpenAI;
+using Azure.Identity;
 using Lab3.Agents;
 using Lab3.Config;
 using Lab3.Services;
@@ -57,7 +58,7 @@ class Program
         Console.WriteLine("\n[2/5] Initializing Azure OpenAI client...");
         var chatClient = new AzureOpenAIClient(
                     new Uri(config.OpenAIEndpoint),
-                    new AzureKeyCredential(config.OpenAIApiKey)
+                    new DefaultAzureCredential()
                  )
                 .GetChatClient(config.ChatModel);
         Console.WriteLine("✓ Chat client initialized");
@@ -127,7 +128,7 @@ class Program
 
         var chatClient = new AzureOpenAIClient(
                             new Uri(config.OpenAIEndpoint),
-                            new AzureKeyCredential(config.OpenAIApiKey)
+                            new DefaultAzureCredential()
                          )
                         .GetChatClient(config.ChatModel);
 
@@ -213,9 +214,8 @@ class Program
     {
         var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
-            .AddUserSecrets<Program>(optional: true);
+            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
+            .AddEnvironmentVariables();
 
         return builder.Build();
     }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Azure;
 using Azure.AI.OpenAI;
+using Azure.Identity;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
 using Lab3.Config;
@@ -15,14 +16,12 @@ namespace Lab3.Services;
 /// </summary>
 public class SearchService
 {
-    private readonly AzureConfig _config;
     private readonly ChatClient _chatClient;
     private readonly SearchClient _searchClient;
     private readonly EmbeddingClient _embeddingClient;
 
     public SearchService(AzureConfig config, ChatClient chatClient)
     {
-        _config = config;
         _chatClient = chatClient;
         
         _searchClient = new SearchClient(
@@ -33,7 +32,7 @@ public class SearchService
         
         var openAIClient = new AzureOpenAIClient(
             new Uri(config.OpenAIEndpoint),
-            new AzureKeyCredential(config.OpenAIApiKey)
+            new DefaultAzureCredential()
         );
         _embeddingClient = openAIClient.GetEmbeddingClient(config.EmbeddingModel);
     }
