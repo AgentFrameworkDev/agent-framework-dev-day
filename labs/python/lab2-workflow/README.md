@@ -2,7 +2,16 @@
 
 This lab demonstrates three key workflow patterns for building AI applications using Python with Azure OpenAI.
 
-## � Lab Exercises
+## 📓 Interactive Notebook
+
+To explore workflow concepts interactively, open and run the Jupyter notebook:
+```bash
+cd lab
+jupyter notebook workflow-concepts.ipynb
+```
+Or open `lab/workflow-concepts.ipynb` directly in VS Code.
+
+## 📝 Lab Exercises
 
 For hands-on exercises, see **[lab/EXERCISES.md](lab/EXERCISES.md)**.
 
