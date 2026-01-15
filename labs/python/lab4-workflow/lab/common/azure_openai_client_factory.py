@@ -112,4 +112,6 @@ def create_chat_client() -> AzureOpenAI:
 
 def get_deployment_name() -> str:
     """Get the deployment name from environment or default."""
-    return os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
+    return os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or \
+           os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME") or \
+           "gpt-4o-mini"
