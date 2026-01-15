@@ -32,11 +32,7 @@ async def main():
     
     # Initialize Azure OpenAI chat client
     print("\n[2/5] Initializing Azure OpenAI client...")
-    chat_client = AzureOpenAIChatClient(
-        deployment_name=config.chat_model, 
-        api_key=config.openai_api_key, 
-        endpoint=config.openai_endpoiint
-    )
+    chat_client = AzureOpenAIChatClient(credential=config.credential)
     print("✓ Chat client initialized")
     
     # Initialize search service
@@ -131,7 +127,7 @@ async def interactive_mode():
     
     workflow = (
         HandoffBuilder(
-            name="yes_no_rag_workflow",
+            name="agentic_rag_workflow",
             participants=[agents["classifier"], agents["semantic_search"]],
         )
         .set_coordinator(agents["classifier"])

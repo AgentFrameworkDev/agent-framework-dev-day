@@ -17,7 +17,6 @@ class AzureConfig:
     
     # Azure OpenAI
     openai_endpoiint: str
-    openai_api_key: str
     openai_api_version: str
     chat_model: str
     embedding_model: str
@@ -33,9 +32,8 @@ class AzureConfig:
             search_api_key=os.getenv("AZURE_SEARCH_API_KEY", ""),
             search_index_name=os.getenv("AZURE_SEARCH_INDEX_NAME", ""),
             openai_endpoiint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
-            openai_api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
             openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION", ""),
-            chat_model=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME", ""), # TODO: rename remove _NAME
+            chat_model=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME", ""),
             embedding_model=os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", ""),
             credential=DefaultAzureCredential()
         )
@@ -52,7 +50,5 @@ class AzureConfig:
             raise ValueError("AZURE_OPENAI_EMBEDDING_DEPLOYMENT environment variable is required")
         if not self.chat_model:
             raise ValueError("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME environment variable is required")
-        if not self.openai_api_key:
-            raise ValueError("AZURE_OPENAI_API_KEY environment variable is required")
         if not self.openai_endpoiint:
             raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is required")

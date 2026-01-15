@@ -13,7 +13,6 @@ from services import SearchService
 from agents import AgentFactory
 from workflows import drain_events, handle_workflow_events
 
-
 async def main():
     """Main execution function for the Agentic RAG system."""
     
@@ -33,11 +32,7 @@ async def main():
     
     # Initialize Azure OpenAI chat client
     print("\n[2/5] Initializing Azure OpenAI client...")
-    chat_client = AzureOpenAIChatClient(
-        deployment_name=config.chat_model, 
-        api_key=config.openai_api_key, 
-        endpoint=config.openai_endpoiint
-    )
+    chat_client = AzureOpenAIChatClient(credential=config.credential)
     print("✓ Chat client initialized")
     
     # Initialize search service
