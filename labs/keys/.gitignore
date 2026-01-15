@@ -1,0 +1,7 @@
+# Ignore all appsettings-like configs by default (to avoid committing unencrypted variants)
+appsettings*.json
+*.appsettings*.json
+*_appsettings*.json
+
+# Allow encrypted variants
+!*_encrypted.json
