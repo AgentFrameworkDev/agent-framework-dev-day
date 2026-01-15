@@ -7,8 +7,27 @@ using Microsoft.Agents.AI;
 
 namespace Lab0;
 
+/// <summary>
+/// Represents the result of running a model with metrics.
+/// </summary>
+public record ModelResult(
+   string DeploymentName,
+   string ModelName,
+   bool Success,
+   long InputTokens,
+   long OutputTokens,
+   long InferenceTokens,
+   long TotalTokens,
+   double Seconds,
+   string Response,
+   string? ErrorMessage = null
+);
+
 public static class Program
 {
+   private const string Prompt = "Summarize the vibe of programming in .NET or C# in 2026 in no more than 3 words";
+   private const string AgentInstructions = "You are a friendly assistant that gives concise responses.";
+
    public static async Task Main(string[] args)
    {
       // Parse command-line arguments
@@ -32,145 +51,245 @@ public static class Program
       Console.WriteLine("Welcome to Agent Framework Dev Day!");
       Console.WriteLine("===================================");
       Console.WriteLine($"Endpoint: {config.Endpoint}");
-      Console.WriteLine($"Deployment: {config.DeploymentName}");
       Console.WriteLine($"Auth: {(config.Credential is ClientSecretCredential ? "Service Principal" : "Default Azure Credential")}");
       Console.WriteLine();
-
-      // Randomly select a model from available deployments
-      var (selectedModel, underlyingModelName) = await GetRandomAvailableModelAsync(aiProjectClient);
-      Console.WriteLine($"Randomly selected model: {selectedModel} ({underlyingModelName})");
-
-      // Create an agent with simple instructions
-      const string agentName = "HelloWorldAgent";
-      const string agentInstructions = "You are a friendly assistant that gives concise responses.";
-
-      Console.WriteLine("Creating agent...");
-      AIAgent agent = await aiProjectClient.CreateAIAgentAsync(
-          name: agentName,
-          model: selectedModel,
-          instructions: agentInstructions
-      );
-      Console.WriteLine($"Agent '{agentName}' created successfully! using model '{selectedModel}'");
+      Console.WriteLine($"Prompt: \"{Prompt}\"");
       Console.WriteLine();
 
-      double elapsedSeconds = 0;
+      // Get all chat-capable models (filter out embedding models)
+      var chatModels = await GetChatCompletionModelsAsync(aiProjectClient, verbose);
+      
+      if (chatModels.Count == 0)
+      {
+         Console.WriteLine("No chat-capable model deployments found.");
+         return;
+      }
+
+      Console.WriteLine($"Found {chatModels.Count} chat-capable model(s). Running comparison...");
+      Console.WriteLine();
+
+      // Run each model sequentially and collect results
+      var results = new List<ModelResult>();
+      
+      foreach (var (deploymentName, modelName) in chatModels)
+      {
+         var result = await RunModelAsync(aiProjectClient, deploymentName, modelName, verbose);
+         results.Add(result);
+      }
+
+      // Output the comparison table
+      PrintComparisonTable(results);
+   }
+
+   /// <summary>
+   /// Gets all chat-capable model deployments (filters out embedding models).
+   /// </summary>
+   private static async Task<List<(string DeploymentName, string ModelName)>> GetChatCompletionModelsAsync(
+      AIProjectClient client, bool verbose)
+   {
+      var chatModels = new List<(string DeploymentName, string ModelName)>();
+      var skippedModels = new List<(string DeploymentName, string ModelName, string Reason)>();
+
+      await foreach (var deployment in client.Deployments.GetDeploymentsAsync())
+      {
+         if (deployment is ModelDeployment model)
+         {
+            var nameLower = model.Name.ToLowerInvariant();
+            var modelNameLower = model.ModelName?.ToLowerInvariant() ?? "";
+
+            // Skip embedding models
+            if (nameLower.Contains("embedding") || modelNameLower.Contains("embedding"))
+            {
+               skippedModels.Add((model.Name, model.ModelName ?? "unknown", "embedding model"));
+               continue;
+            }
+
+            // Skip other non-chat models (whisper, dall-e, tts, etc.)
+            if (nameLower.Contains("whisper") || modelNameLower.Contains("whisper") ||
+                nameLower.Contains("dall-e") || modelNameLower.Contains("dall-e") ||
+                nameLower.Contains("tts") || modelNameLower.Contains("tts"))
+            {
+               skippedModels.Add((model.Name, model.ModelName ?? "unknown", "non-chat model"));
+               continue;
+            }
+
+            chatModels.Add((model.Name, model.ModelName ?? "unknown"));
+         }
+      }
+
+      if (verbose && skippedModels.Count > 0)
+      {
+         Console.WriteLine("Skipped models:");
+         foreach (var (name, underlying, reason) in skippedModels)
+         {
+            Console.WriteLine($"  {name} ({underlying}) - {reason}");
+         }
+         Console.WriteLine();
+      }
+
+      return chatModels;
+   }
+
+   /// <summary>
+   /// Runs a single model with the prompt and returns metrics.
+   /// </summary>
+   private static async Task<ModelResult> RunModelAsync(
+      AIProjectClient client, 
+      string deploymentName, 
+      string modelName,
+      bool verbose)
+   {
+      if (verbose)
+      {
+         Console.WriteLine($"Running: {deploymentName} ({modelName})...");
+      }
+
+      AIAgent? agent = null;
       try
       {
-         // Send a simple prompt and get response
-         // const string prompt = "Tell me one a joke or fact about .NET or Python!";
-         const string prompt = "Tell me one a joke OR interesting fact about .NET or Python!";
-         Console.WriteLine($"User: {prompt}");
-         Console.WriteLine();
+         // Create agent for this model - keep name short (max 63 chars)
+         var agentName = $"Cmp{Guid.NewGuid().ToString("N")[..8]}";
+         agent = await client.CreateAIAgentAsync(
+            name: agentName,
+            model: deploymentName,
+            instructions: AgentInstructions
+         );
 
-         // Run the agent (non-streaming for simplicity and to get token usage)
+         // Run and time the prompt
          var stopwatch = Stopwatch.StartNew();
-         var response = await agent.RunAsync(prompt);
+         var response = await agent.RunAsync(Prompt);
          stopwatch.Stop();
-         elapsedSeconds = stopwatch.Elapsed.TotalSeconds;
 
-         Console.WriteLine($"Agent: {response}");
-         Console.WriteLine();
+         var inputTokens = response.Usage?.InputTokenCount ?? 0;
+         var outputTokens = response.Usage?.OutputTokenCount ?? 0;
+         var inferenceTokens = response.Usage?.ReasoningTokenCount ?? 0;
+         var totalTokens = response.Usage?.TotalTokenCount ?? 0;
+         var seconds = stopwatch.Elapsed.TotalSeconds;
+         var responseText = response.ToString()?.Trim() ?? "";
 
-         // Display token usage information
-         Console.WriteLine("========================================");
-         Console.WriteLine("Token Usage:");
-         if (response.Usage != null)
+         if (verbose)
          {
-            Console.WriteLine($"  {response.Usage.InputTokenCount,6} Input Tokens");
-            Console.WriteLine($"+ {response.Usage.OutputTokenCount,6} Output Tokens (including {response.Usage.ReasoningTokenCount} Reasoning Tokens)");
-            Console.WriteLine($"= {response.Usage.TotalTokenCount,6} Total Tokens");
-         }
-         else
-         {
-            Console.WriteLine("  Token usage information not available");
+            Console.WriteLine($"  Completed in {seconds:F2}s - {responseText}");
          }
 
-         // Output the models used
-         Console.WriteLine();
-         Console.WriteLine("Models Used:");
-         Console.WriteLine("========================================");
+         return new ModelResult(
+            DeploymentName: deploymentName,
+            ModelName: modelName,
+            Success: true,
+            InputTokens: inputTokens,
+            OutputTokens: outputTokens,
+            InferenceTokens: inferenceTokens,
+            TotalTokens: totalTokens,
+            Seconds: seconds,
+            Response: responseText
+         );
       }
       catch (ClientResultException ex)
       {
-         Console.WriteLine("An error occurred while calling the Foundry AI service.");
-         Console.WriteLine($"Message: {ex.Message}");
-
-         var raw = ex.GetRawResponse();
-         if (raw is not null)
+         var errorMsg = ex.Message;
+         if (verbose)
          {
-            Console.WriteLine($"Reason phrase: {raw.ReasonPhrase}");
-            Console.WriteLine($"Error body: {raw.Content}");
-            Console.WriteLine("——— Response headers ———");
-            foreach (var kv in raw.Headers)
-            {
-               Console.WriteLine($"{kv.Key}: {kv.Value}");
-            }
+            Console.WriteLine($"  ERROR: {errorMsg}");
          }
+         return new ModelResult(
+            DeploymentName: deploymentName,
+            ModelName: modelName,
+            Success: false,
+            InputTokens: 0,
+            OutputTokens: 0,
+            InferenceTokens: 0,
+            TotalTokens: 0,
+            Seconds: 0,
+            Response: "",
+            ErrorMessage: errorMsg
+         );
       }
       catch (Exception ex)
       {
-         Console.WriteLine("An error occurred while running the agent:");
-         Console.WriteLine(ex.ToString());
+         var errorMsg = ex.Message;
+         if (verbose)
+         {
+            Console.WriteLine($"  ERROR: {errorMsg}");
+         }
+         return new ModelResult(
+            DeploymentName: deploymentName,
+            ModelName: modelName,
+            Success: false,
+            InputTokens: 0,
+            OutputTokens: 0,
+            InferenceTokens: 0,
+            TotalTokens: 0,
+            Seconds: 0,
+            Response: "",
+            ErrorMessage: errorMsg
+         );
       }
       finally
       {
-         // Cleanup - delete the agent
-         Console.WriteLine();
-         Console.WriteLine("Cleaning up agent...");
-         await aiProjectClient.Agents.DeleteAgentAsync(agent.Name);
-         Console.WriteLine("Agent deleted successfully!");
-
-         Console.WriteLine($"The model used by the agent was: {selectedModel} ({underlyingModelName}) and took {elapsedSeconds:F2} seconds.");
-      }
-
-      // // List available model deployments
-      // Console.WriteLine();
-      // await ListAvailableModelsAsync(aiProjectClient);
-
-      // // Get a random available model deployment
-      // var randomModel = await GetRandomAvailableModelAsync(aiProjectClient);
-      // Console.WriteLine();
-      // Console.WriteLine($"Randomly selected model deployment: {randomModel}");
-   }
-
-   /// <summary>
-   /// Lists available model deployments in the Azure AI Foundry project.
-   /// </summary>
-   private static async Task ListAvailableModelsAsync(AIProjectClient client)
-   {
-      Console.WriteLine("Available Model Deployments:");
-      Console.WriteLine(new string('-', 50));
-
-      await foreach (var deployment in client.Deployments.GetDeploymentsAsync())
-      {
-         if (deployment is ModelDeployment model)
+         // Cleanup agent
+         if (agent != null)
          {
-            Console.WriteLine($"  {model.Name,-30} {model.ModelName}");
+            try
+            {
+               await client.Agents.DeleteAgentAsync(agent.Name);
+            }
+            catch
+            {
+               // Ignore cleanup errors
+            }
          }
       }
    }
 
    /// <summary>
-   /// Randomly selects and returns one deployment name (model.Name) and corresponding underlying model name (model.ModelName) from among those provisioned
-   /// at <param>client</param> Foundry project.
+   /// Prints the comparison table with all model results.
    /// </summary>
-   private static async Task<(string DeploymentName, string ModelName)> GetRandomAvailableModelAsync(AIProjectClient client)
+   private static void PrintComparisonTable(List<ModelResult> results)
    {
-      var availableModels = new List<(string DeploymentName, string ModelName)>();
+      // Calculate column widths
+      var maxModelLen = Math.Max(5, results.Max(r => r.DeploymentName.Length));
+      var maxResponseLen = 50; // Truncate responses to this length
 
-      await foreach (var deployment in client.Deployments.GetDeploymentsAsync())
+      // Print header
+      Console.WriteLine();
+      Console.WriteLine($"{"MODEL".PadRight(maxModelLen)}  {"IN",5}  {"OUT",5}  {"(INF)",5}  {"TOTAL",6}  {"SECS",6}  RESPONSE");
+      Console.WriteLine(new string('=', maxModelLen + 5 + 5 + 5 + 6 + 6 + maxResponseLen + 14));
+
+      // Print each result
+      foreach (var result in results)
       {
-         if (deployment is ModelDeployment model)
+         var model = result.DeploymentName.PadRight(maxModelLen);
+
+         if (result.Success)
          {
-            availableModels.Add((model.Name, model.ModelName));
+            var response = TruncateResponse(result.Response, maxResponseLen);
+            Console.WriteLine($"{model}  {result.InputTokens,5}  {result.OutputTokens,5}  {result.InferenceTokens,5}  {result.TotalTokens,6}  {result.Seconds,6:F2}  {response}");
+         }
+         else
+         {
+            var errorMsg = TruncateResponse($"ERROR: {result.ErrorMessage}", maxResponseLen);
+            Console.WriteLine($"{model}  {"--",5}  {"--",5}  {"--",5}  {"--",6}  {"--",6}  {errorMsg}");
          }
       }
 
-      if (availableModels.Count == 0)
-      {
-         throw new InvalidOperationException("No model deployments available in the Azure AI Foundry project.");
-      }
+      Console.WriteLine();
+      Console.WriteLine("Legend: IN=Input Tokens, OUT=Output Tokens, (INF)=Inference/Reasoning Tokens, TOTAL=Total Tokens, SECS=Runtime");
+   }
 
-      return availableModels[Random.Shared.Next(availableModels.Count)];
+   /// <summary>
+   /// Truncates a response string to the specified max length.
+   /// </summary>
+   private static string TruncateResponse(string response, int maxLength)
+   {
+      if (string.IsNullOrEmpty(response))
+         return "";
+      
+      // Replace newlines with spaces for table display
+      response = response.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ");
+      
+      if (response.Length <= maxLength)
+         return response;
+      
+      return response[..(maxLength - 3)] + "...";
    }
 }
