@@ -7,7 +7,6 @@
     <Nullable>enable</Nullable>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
     <NoWarn>$(NoWarn);CA2252</NoWarn>
-    <UserSecretsId>ec53e531-20ef-448d-957e-26318dfd060c</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,10 +17,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.*-*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.*-*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.*-*" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="../../../../tools/LabKeyEncrypter/LabKeyEncrypter.Library/LabKeyEncrypter.Library.csproj" />
   </ItemGroup>
 
 </Project>
