@@ -4,7 +4,7 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 
 ## Agenda
 
-- Part 1 – Overview, first access (Lab 0), observability (OTel), safety, hosted agents
+- Part 1 – Overview, first access (Lab 0), safety
 - Part 2 – Workflow patterns and Model Context Protocol (MCP)
 - Part 3 – Retrieval-Augmented Generation (RAG) and Agentic RAG
 
@@ -50,7 +50,7 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 | Lab | Focus | Supplemental docs |
 | --- | ------ | ------------------ |
 | lab0-hello-world | Environment smoke test and first Python agent (instructions inside `begin/`) | _README not provided_ |
-| lab1-basic-training | Progressive exercises reinforcing Agent Framework primitives (see `begin/` folder) | _README not provided_ |
+| lab1-safety | Progressive exercises reinforcing Agent Framework primitives (see `begin/` folder) | _README not provided_ |
 | lab2-mcp | Python MCP servers/clients plus `mcp-concepts.ipynb` | [labs/python/lab2-mcp/README.md](labs/python/lab2-mcp/README.md) |
 | lab2-workflow | Workflow patterns implemented with Python executors and notebooks | [labs/python/lab2-workflow/README.md](labs/python/lab2-workflow/README.md) |
 | lab3-agentic-rag | Agentic RAG build-out leveraging Azure AI Search tooling | [labs/python/lab3-agentic-rag/begin/README.md](labs/python/lab3-agentic-rag/begin/README.md) |

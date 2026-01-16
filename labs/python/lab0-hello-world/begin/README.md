@@ -20,11 +20,10 @@ Consider comparing:
 2. Input token use - the **IN** column is how many tokens taken up by the input prompt
 3. Output token use - the **OUT** column
 4. Reasoning token use - the **(REAS)** column
-5. Does the quality of the response vary? - the **REPONSE** column show Agent's output; why aren't all of the responses identical?
-
-Did you notice there are TWO prompts? Feel free to modify the prompts to see what happens.
+5. Does the quality of the response vary? - the **REPONSE** column show Agent's output; why aren't all of the responses identical? Compare semantics with [Fun with Vectors](https://funwithvectors.com/) app.
 
 Resources:
 
 * [OpenAI's Tokenizer]<https://platform.openai.com/tokenizer>
+* Consider comparing the MEANING "semantics" with [Fun with vectors](https://funwithvectors.com/) app.
 * Ask your favorite AI "what is a Reasoning model and why should I care?"
