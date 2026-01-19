@@ -17,6 +17,7 @@ import os
 import sys
 import json
 from pathlib import Path
+from dotenv import load_dotenv
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.sse import sse_client
@@ -39,33 +40,15 @@ def find_config_path(start_path: str) -> str:
     return start_path
 
 
-def load_env_file(env_path: str) -> dict:
-    """Load environment variables from .env file (JSON format)."""
-    env_file = Path(env_path) / ".env"
-    
-    if not env_file.exists():
-        return {}
-    
-    try:
-        with open(env_file, 'r') as f:
-            content = f.read()
-            env_vars = json.loads(content)
-            
-            # Set environment variables
-            for key, value in env_vars.items():
-                os.environ[key] = str(value)
-            
-            return env_vars
-    except (json.JSONDecodeError, IOError) as e:
-        print(f"Warning: Failed to load .env file: {e}")
-        return {}
-
-
-# Load environment variables from .env file
+# Load environment variables from .env file using python-dotenv
 config_path = find_config_path(os.path.dirname(os.path.abspath(__file__)))
-env_vars = load_env_file(config_path)
-if env_vars:
-    print(f"Loaded {len(env_vars)} environment variables from: {config_path}/.env")
+env_file = Path(config_path) / ".env"
+
+if env_file.exists():
+    load_dotenv(env_file)
+    print(f"Loaded environment variables from: {config_path}/.env")
+else:
+    print(f"Warning: .env file not found at {config_path}/.env")
 
 
 print("=" * 60)
@@ -85,9 +68,10 @@ print()
 # deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or \
 #              os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME") or \
 #              "gpt-4o-mini"
-# 
+
 # if not endpoint:
 #     raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is not set")
+
 
 # Placeholder values - REPLACE after uncommenting above
 endpoint = "https://YOUR-RESOURCE.openai.azure.com/"
@@ -103,15 +87,27 @@ print()
 # Uncomment the entire function below
 # ============================================================================
 # def create_openai_client() -> AzureOpenAI:
-#     """Create Azure OpenAI client with Azure CLI credentials."""
-#     credential = AzureCliCredential()
-#     token = credential.get_token("https://cognitiveservices.azure.com/.default")
-#     
-#     return AzureOpenAI(
-#         azure_endpoint=endpoint,
-#         api_key=token.token,
-#         api_version="2024-02-15-preview"
-#     )
+#     """Create Azure OpenAI client with API key or Azure CLI credentials."""
+#     # Try using API key from environment first
+#     api_key = os.environ.get("AZURE_OPENAI_API_KEY")
+    
+#     if api_key:
+#         # Use API key authentication
+#         return AzureOpenAI(
+#             azure_endpoint=endpoint,
+#             api_key=api_key,
+#             api_version="2024-02-15-preview"
+#         )
+#     else:
+#         # Fallback to Azure CLI credentials
+#         credential = AzureCliCredential()
+#         token = credential.get_token("https://cognitiveservices.azure.com/.default")
+        
+#         return AzureOpenAI(
+#             azure_endpoint=endpoint,
+#             api_key=token.token,
+#             api_version="2024-02-15-preview"
+#         )
 
 
 # ============================================================================
@@ -124,36 +120,36 @@ print()
 #     print("\n" + "=" * 60)
 #     print("Demo: Local MCP Server (STDIO)")
 #     print("=" * 60)
-#     
+    
 #     # STEP 3.1: Create STDIO server parameters
 #     server_params = StdioServerParameters(
 #         command=sys.executable,
 #         args=["-m", "mcp_local_server.main"],
 #         cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #     )
-#     
+    
 #     # STEP 3.2: Connect to the server using stdio_client
 #     async with stdio_client(server_params) as (read, write):
 #         async with ClientSession(read, write) as session:
 #             # STEP 3.3: Initialize the session
 #             await session.initialize()
-#             
+            
 #             # STEP 3.4: List available tools
 #             tools = await session.list_tools()
 #             print("\nAvailable tools:")
 #             for tool in tools.tools:
 #                 print(f"  - {tool.name}: {tool.description}")
-#             
+            
 #             # STEP 3.5: Call GetConfig tool
 #             print("\nCalling GetConfig('theme')...")
 #             result = await session.call_tool("GetConfig", {"key": "theme"})
 #             print(f"Result: {result.content[0].text}")
-#             
+            
 #             # Call UpdateConfig tool
 #             print("\nCalling UpdateConfig('theme', 'light')...")
 #             result = await session.call_tool("UpdateConfig", {"key": "theme", "value": "light"})
 #             print(f"Result: {result.content[0].text}")
-#             
+            
 #             # Call GetTicket tool
 #             print("\nCalling GetTicket('TICKET-001')...")
 #             result = await session.call_tool("GetTicket", {"ticket_id": "TICKET-001"})
@@ -170,29 +166,29 @@ print()
 #     print("\n" + "=" * 60)
 #     print("Demo: Remote MCP Server (HTTP/SSE ? REST API)")
 #     print("=" * 60)
-#     
+    
 #     # STEP 4.1: Define the SSE endpoint URL
 #     url = "http://localhost:5070/sse"
 #     print(f"\nConnecting to {url}...")
-#     
+    
 #     try:
 #         # STEP 4.2: Connect using sse_client
 #         async with sse_client(url) as (read, write):
 #             async with ClientSession(read, write) as session:
 #                 # STEP 4.3: Initialize the session
 #                 await session.initialize()
-#                 
+                
 #                 # STEP 4.4: List available tools
 #                 tools = await session.list_tools()
 #                 print("\nAvailable tools:")
 #                 for tool in tools.tools:
 #                     print(f"  - {tool.name}: {tool.description}")
-#                 
+                
 #                 # STEP 4.5: Call GetTicket tool (calls REST API)
 #                 print("\nCalling GetTicket('TICKET-001') via REST API...")
 #                 result = await session.call_tool("GetTicket", {"ticket_id": "TICKET-001"})
 #                 print(f"Result: {result.content[0].text}")
-#                 
+                
 #                 # Call UpdateTicket tool
 #                 print("\nCalling UpdateTicket('TICKET-001', 'Resolved') via REST API...")
 #                 result = await session.call_tool("UpdateTicket", {"ticket_id": "TICKET-001", "status": "Resolved"})
@@ -202,33 +198,33 @@ print()
 #         print("Make sure the MCP Bridge (port 5070) and REST API (port 5060) are running.")
 
 
-# ============================================================================
-# Demo with AI Agent (Bonus - uses MCP tools with Azure OpenAI)
-# ============================================================================
+# # ============================================================================
+# # Demo with AI Agent (Bonus - uses MCP tools with Azure OpenAI)
+# # ============================================================================
 # async def demo_with_ai_agent():
 #     """Demo: Use MCP tools with Azure OpenAI agent."""
 #     print("\n" + "=" * 60)
 #     print("Demo: AI Agent with MCP Tools")
 #     print("=" * 60)
-#     
+    
 #     if endpoint.startswith("https://YOUR"):
 #         print("\nSkipping AI demo - AZURE_OPENAI_ENDPOINT not configured")
 #         return
-#     
+    
 #     # Get Azure OpenAI client
 #     client = create_openai_client()
-#     
+    
 #     # Connect to local MCP to get tools
 #     server_params = StdioServerParameters(
 #         command=sys.executable,
 #         args=["-m", "mcp_local_server.main"],
 #         cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #     )
-#     
+    
 #     async with stdio_client(server_params) as (read, write):
 #         async with ClientSession(read, write) as session:
 #             await session.initialize()
-#             
+            
 #             # Get tools for OpenAI
 #             mcp_tools = await session.list_tools()
 #             openai_tools = [
@@ -242,21 +238,21 @@ print()
 #                 }
 #                 for tool in mcp_tools.tools
 #             ]
-#             
+            
 #             # Chat with AI
 #             messages = [
 #                 {"role": "system", "content": "You are a helpful assistant with access to configuration and ticket tools."},
 #                 {"role": "user", "content": "What is the current theme configuration?"}
 #             ]
-#             
+            
 #             print("\nUser: What is the current theme configuration?")
-#             
+            
 #             response = client.chat.completions.create(
 #                 model=deployment,
 #                 messages=messages,
 #                 tools=openai_tools
 #             )
-#             
+            
 #             # Handle tool calls
 #             if response.choices[0].message.tool_calls:
 #                 for tool_call in response.choices[0].message.tool_calls:
