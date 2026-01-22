@@ -84,7 +84,7 @@ class SearchService:
         """
         if select_fields is None:
             select_fields = [
-                "Id", "Subject", "Body", "Answer", "Business_Type",
+                "Id", "Create_Date", "Subject", "Body", "Answer", "Business_Type",
                 "Type", "Queue", "Priority", "Tags"
             ]
         
@@ -119,6 +119,7 @@ class SearchService:
         for doc in results:
             result_obj = {
                 "id": doc.get("Id", ""),
+                "create_date": doc.get("Create_Date", ""),
                 "subject": doc.get("Subject", ""),
                 "body": doc.get("Body", ""),
                 "answer": doc.get("Answer", ""),
@@ -155,7 +156,7 @@ class SearchService:
         """
         if select_fields is None:
             select_fields = [
-                "Id", "Subject", "Body", "Answer", "Business_Type",
+                "Id", "Create_Date", "Subject", "Body", "Answer", "Business_Type",
                 "Type", "Queue", "Priority", "Tags"
             ]
         
@@ -182,6 +183,7 @@ class SearchService:
         for doc in results:
             result_obj = {
                 "id": doc.get("Id", ""),
+                "create_date": doc.get("Create_Date", ""),
                 "subject": doc.get("Subject", ""),
                 "body": doc.get("Body", ""),
                 "answer": doc.get("Answer", ""),

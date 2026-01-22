@@ -51,7 +51,7 @@ async def main():
     workflow = (
         HandoffBuilder(
             name="agentic_rag_workflow",
-            participants=[agents["classifier"], agents["yes_no"], agents["semantic_search"], agents["count"], agents["difference"], agents["intersection"], agents["multi_hop"], agents["comparative"]],
+            participants=[agents["classifier"], agents["yes_no"], agents["semantic_search"], agents["count"], agents["difference"], agents["intersection"], agents["multi_hop"], agents["comparative"], agents["ordinal"], agents["superlative"]],
         )
         .set_coordinator(agents["classifier"])
         .build()
@@ -67,6 +67,8 @@ async def main():
         "Which Dell XPS issue does not mention Windows?", # (Difference)
         "What issues are for Dell XPS laptops and the user tried Win + Ctrl + Shift + B?", # (Intersection)
         "What department had consultants with Login Issues?",  # (Multi-hop)
+        "What is the last issue for the HR department?",  # (Ordinal)
+        "Which department has the most high priority incidents?",  # (Superlative)
     ]
     
     print("\n" + "=" * 60)
@@ -152,7 +154,7 @@ async def interactive_mode():
             workflow = (
                 HandoffBuilder(
                     name="agentic_rag_workflow",
-                    participants=[agents["classifier"], agents["yes_no"], agents["semantic_search"], agents["count"], agents["difference"], agents["intersection"], agents["multi_hop"], agents["comparative"]],
+                    participants=[agents["classifier"], agents["yes_no"], agents["semantic_search"], agents["count"], agents["difference"], agents["intersection"], agents["multi_hop"], agents["comparative"], agents["ordinal"], agents["superlative"]],
                 )
                 .set_coordinator(agents["classifier"])
                 .build()

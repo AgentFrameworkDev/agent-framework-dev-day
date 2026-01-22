@@ -15,6 +15,8 @@ from agents import difference_agent
 from agents import intersection_agent
 from agents import multi_hop_agent
 from agents import comparative_agent
+from agents import ordinal_agent
+from agents import superlative_agent
 from services import SearchService
 
 
@@ -48,4 +50,6 @@ class AgentFactory:
             "intersection": intersection_agent.create_intersection_agent(self.chat_client, self.search_service),
             "multi_hop": multi_hop_agent.create_multi_hop_agent(self.chat_client, self.search_service),
             "comparative": comparative_agent.create_comparative_agent(self.chat_client, self.search_service),
+            "ordinal": ordinal_agent.create_ordinal_agent(self.chat_client, self.search_service),
+            "superlative": superlative_agent.create_superlative_agent(self.chat_client, self.search_service),
         }

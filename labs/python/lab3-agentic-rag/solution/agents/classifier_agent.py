@@ -12,6 +12,7 @@ Your task is to route questions to specialist search agents based on the user qu
 ## Database Schema
 The database contains IT support tickets with these fields:
 - Id: unique identifier
+- Create_Date: ticket creation date
 - Subject: ticket subject
 - Body: ticket question/description
 - Answer: ticket response/solution
@@ -68,46 +69,72 @@ The database contains IT support tickets with these fields:
      - "Surface vs Dell: which has more problems?" ✓ COMPARATIVE_AGENT
 
 **YES_NO_AGENT**: Simple yes/no questions (expect "yes" or "no" as answer)
-   - Keywords: "is", "are", "can", "does", "do", "will", "should", "any" (WITHOUT negation)
+   - **Keywords**: "is", "are", "can", "does", "do", "will", "should", "any" (WITHOUT negation)
    - Examples:
-     - "Are there any issues for Dell XPS laptops?"
-     - "Is my account locked?"
-     - "Can I access the VPN?"
-     - "Does the printer support color printing?"
-     - "Do we have problems with Surface devices?"
+     - "Are there any issues for Dell XPS laptops?" ✓ YES_NO_AGENT
+     - "Is my account locked?" ✓ YES_NO_AGENT
+     - "Can I access the VPN?" ✓ YES_NO_AGENT
+     - "Does the printer support color printing?" ✓ YES_NO_AGENT
+     - "Do we have problems with Surface devices?" ✓ YES_NO_AGENT
 
-   - When "and" combines database field values (Priority=high, Queue=HR, Type=Incident), these are FILTERS, not intersection
-   - Keywords: "how many", "number of", "count of", "total", "how much"
+**COUNT_AGENT**: Questions asking for counts or totals
+   - **Keywords**: "how many", "number of", "count of", "total", "how much"
+   - **Note**: When "and" combines database field values (Priority=high, Queue=HR, Type=Incident), these are FILTERS, not intersection
    - Examples:
      - "How many tickets were logged for Human Resources?" ✓ COUNT_AGENT
-     - "How many tickets were logged and Incidents for Human Resources and low priority?" ✓ COUNT_AGENT (Type=Incident AND Queue=HR AND Priority=low - all filters!)
+     - "How many Incidents for Human Resources and low priority?" ✓ COUNT_AGENT (Type=Incident AND Queue=HR AND Priority=low - all filters!)
      - "What is the total number of open tickets?" ✓ COUNT_AGENT
-     - "Count of high priority incidents for IT?" ✓ COUNT_AGENT (Priority=high AND Type=Incident AND Queue=IT - all filters!)Human Resources and low priority?" ✓ COUNT_AGENT (and = filters)
-     - "What is the total number of open tickets?" ✓ COUNT_AGENT
+     - "Count of high priority incidents for IT?" ✓ COUNT_AGENT (Priority=high AND Type=Incident AND Queue=IT - all filters!)
      - "Count of high priority incidents" ✓ COUNT_AGENT
 
-**SEMANTIC_SEARCH_AGENT**: Queries looking for similar issues, solutions, or general information
-   - Keywords: "how to", "why", "what causes", "solve", "fix", "issue with", "problem with", "what problems", "what issues"
+**ORDINAL_AGENT**: Questions asking for items based on position or order
+   - **Keywords**: "first", "last", "most recent", "latest", "oldest", "earliest", "newest", "2nd", "3rd", "nth", "top", "bottom"
+   - **Pattern**: [What/Which/Show] [ORDINAL] [ITEM] [FOR/IN/WITH] [CRITERIA]
    - Examples:
-     - "What problems are there with Surface devices?"
-     - "How do I reset my password?"
-     - "Issues with email synchronization"
-     - "What AWS problems have been reported?"
-COUNTING first**: If question has "how many", "count", "total", "number of" → COUNT_AGENT (even if "and" present - those are filters!)
+     - "What is the last issue for the HR department?" ✓ ORDINAL_AGENT
+     - "Show me the first ticket logged for IT" ✓ ORDINAL_AGENT
+     - "What was the most recent high priority incident?" ✓ ORDINAL_AGENT
+     - "Which is the oldest open ticket?" ✓ ORDINAL_AGENT
+     - "What is the latest Surface problem?" ✓ ORDINAL_AGENT
+     - "Show me the 3rd incident for Finance" ✓ ORDINAL_AGENT
+
+**SUPERLATIVE_AGENT**: Questions asking for max/min aggregations across groups
+   - **Keywords**: "most", "least", "highest", "lowest", "maximum", "minimum", "greatest", "fewest", "largest", "smallest"
+   - **Pattern**: [Which/What] [GROUP] has the [SUPERLATIVE] [ITEM]?
+   - **Key difference from ORDINAL**: Superlative aggregates across groups (e.g., "which department has most"), while Ordinal finds position in a sequence (e.g., "last ticket")
+   - Examples:
+     - "Which department has the most high priority incidents?" ✓ SUPERLATIVE_AGENT
+     - "What queue handles the least number of requests?" ✓ SUPERLATIVE_AGENT
+     - "Which priority level has the fewest tickets?" ✓ SUPERLATIVE_AGENT
+     - "What ticket type has the most problems?" ✓ SUPERLATIVE_AGENT
+     - "Which team has the highest volume of incidents?" ✓ SUPERLATIVE_AGENT
+     - "What department logs the most Surface issues?" ✓ SUPERLATIVE_AGENT
+
+**SEMANTIC_SEARCH_AGENT**: Queries looking for similar issues, solutions, or general information
+   - **Keywords**: "how to", "why", "what causes", "solve", "fix", "issue with", "problem with", "what problems", "what issues"
+   - Examples:
+     - "What problems are there with Surface devices?" ✓ SEMANTIC_SEARCH_AGENT
+     - "How do I reset my password?" ✓ SEMANTIC_SEARCH_AGENT
+     - "Issues with email synchronization" ✓ SEMANTIC_SEARCH_AGENT
+     - "What AWS problems have been reported?" ✓ SEMANTIC_SEARCH_AGENT
+
+## Classification Priority Order
+1. **Check for COUNTING first**: If question has "how many", "count", "total", "number of" → COUNT_AGENT (even if "and" present - those are filters!)
 2. **Check for NEGATION**: If question contains negation/exclusion words ("not", "don't", "without", "excluding") → DIFFERENCE_AGENT
 3. **Check for COMPARISON**: If question has "more", "less", "vs", "or" comparing multiple items → COMPARATIVE_AGENT
-4. **Check for INTERSECTION**: If question has multiple criteria with "and", "both", "that also" (WITHOUT "how many") → INTERSECTION_AGENT
-5. **Check for MULTI-HOP**: If question asks "What [FIELD] had [CONDITION]" (searching for condition, extracting field) → MULTI_HOP_AGENT
-6. **YES_NO_AGENT** (explicit yes/no questions expecting booleanCONDITION]" (searching for condition, extracting field) → MULTI_HOP_AGENT
-5. **YES_NO_AGENT** (explicit yes/no questions expecting boolean answer)
-6. **COUNT_AGENT** (explicit counting requests expecting numeric answer)
-7. **SEMANTIC_SEARCH_AGENT** (everything else requiring search)
+4. **Check for SUPERLATIVE**: If question asks "which [GROUP] has the most/least" → SUPERLATIVE_AGENT
+5. **Check for ORDINAL**: If question asks for "first", "last", "most recent", "nth" item → ORDINAL_AGENT
+6. **Check for INTERSECTION**: If question has multiple search topics with "and", "both", "that also" (WITHOUT "how many") → INTERSECTION_AGENT
+7. **Check for MULTI-HOP**: If question asks "What [FIELD] had [CONDITION]" (searching for condition, extracting field) → MULTI_HOP_AGENT
+8. **YES_NO_AGENT**: Explicit yes/no questions expecting boolean answer
+9. **SEMANTIC_SEARCH_AGENT**: Everything else requiring search
 
-## IDATABASE FIELD FILTERS**: Priority (high/medium/low), Queue (HR/IT/Finance/etc.), Type (Incident/Request/Problem/Change) are FILTERS, not search topics
+## Important Rules
+- **DATABASE FIELD FILTERS**: Priority (high/medium/low), Queue (HR/IT/Finance/etc.), Type (Incident/Request/Problem/Change) are FILTERS, not search topics
 - **INTERSECTION vs FILTERS**: Use INTERSECTION_AGENT only when "and" combines search topics (Dell AND Surface, login AND password). Use COUNT_AGENT or SEMANTIC_SEARCH for field filters.
 - **NEGATION TAKES PRECEDENCE**: Any question with "not", "don't", "without", "excluding" should go to DIFFERENCE_AGENT
 - Example: "How many Incidents and high priority and HR?" = COUNT_AGENT (all filters: Type=Incident, Priority=high, Queue=HR)
-- Example: "What Dell issues and Surface issues?" = INTERSECTION_AGENT (two search topics)thout "how many" = INTERSECTION_AGENT (separate searches)
+- Example: "What Dell issues and Surface issues?" = INTERSECTION_AGENT (two search topics)
 - Example: "How many X and Y and Z?" = COUNT_AGENT. "What X and Y?" = INTERSECTION_AGENT
 - A question like "Which X does not mention Y?" is DIFFERENCE_AGENT, NOT COUNT_AGENT
 """
