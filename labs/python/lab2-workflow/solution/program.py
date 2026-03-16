@@ -18,44 +18,20 @@ All demos use a Customer Support Ticket System as the example scenario.
 import asyncio
 import sys
 import os
-import json
 from pathlib import Path
+from dotenv import load_dotenv
 
 
 def load_env_from_root():
-    """Load environment variables from .env file in the root python folder."""
+    """Load environment variables from .env file (KEY=VALUE format) in the root python folder."""
     # Find the root python folder (2 levels up from solution folder)
     current_dir = Path(__file__).resolve().parent
-    root_dir = current_dir.parent.parent  # lab4-workflow -> python
+    root_dir = current_dir.parent.parent  # solution -> lab2-workflow -> python
     env_file = root_dir / ".env"
-    
+
     if env_file.exists():
         print(f"Loading configuration from: {env_file}")
-        with open(env_file, 'r') as f:
-            content = f.read().strip()
-            
-        # Try to parse as JSON (the .env file is in JSON format)
-        try:
-            env_vars = json.loads(content)
-            for key, value in env_vars.items():
-                os.environ[key] = str(value)
-            print(f"Loaded {len(env_vars)} environment variables:")
-            print("-" * 50)
-            for key, value in env_vars.items():
-                # Mask sensitive values (API keys, secrets)
-                if any(sensitive in key.upper() for sensitive in ['KEY', 'SECRET', 'PASSWORD', 'TOKEN']):
-                    masked_value = value[:4] + '***' + value[-4:] if len(value) > 8 else '***'
-                else:
-                    masked_value = value
-                print(f"  {key}: {masked_value}")
-            print("-" * 50)
-        except json.JSONDecodeError:
-            # Fallback: parse as standard KEY=VALUE format
-            for line in content.splitlines():
-                line = line.strip()
-                if line and not line.startswith('#') and '=' in line:
-                    key, value = line.split('=', 1)
-                    os.environ[key.strip()] = value.strip().strip('"\'')
+        load_dotenv(env_file)
     else:
         print(f"Warning: .env file not found at {env_file}")
 

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "TICKET-001",
+    "customerId": "CUST-001",
+    "customerName": "Alice Johnson",
+    "subject": "Login issue",
+    "description": "Cannot login to the system",
+    "status": "Open",
+    "priority": "High",
+    "assignedTo": null
+  },
+  {
+    "id": "TICKET-002",
+    "customerId": "CUST-002",
+    "customerName": "Bob Smith",
+    "subject": "Performance problem",
+    "description": "System is running slowly",
+    "status": "In Progress",
+    "priority": "Medium",
+    "assignedTo": "support-team"
+  },
+  {
+    "id": "TICKET-003",
+    "customerId": "CUST-003",
+    "customerName": "Carol White",
+    "subject": "Data sync error",
+    "description": "Data not syncing properly",
+    "status": "Open",
+    "priority": "High",
+    "assignedTo": null
+  }
+]

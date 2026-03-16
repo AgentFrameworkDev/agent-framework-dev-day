@@ -1,18 +1,19 @@
 """
-MCP Bridge - HTTP/SSE MCP Server that wraps REST API.
+MCP Bridge - Streamable HTTP MCP Server that wraps REST API.
 
-This server exposes MCP tools over HTTP/SSE that call the REST API backend.
+This server exposes MCP tools over Streamable HTTP that call the REST API backend.
+
+Architecture:
+   AgentClient -> MCP Bridge (:5070) -> REST API (:5060)
 """
 import asyncio
+from contextvars import ContextVar
 import httpx
 from pathlib import Path
 from dotenv import load_dotenv
 from mcp.server import Server
-from mcp.server.sse import SseServerTransport
+from mcp.server.streamable_http import StreamableHTTPServerTransport
 from mcp.types import Tool, TextContent
-from starlette.applications import Starlette
-from starlette.routing import Route
-from starlette.responses import JSONResponse
 
 # Load .env file from labs/python folder
 env_path = Path(__file__).parent.parent.parent.parent / '.env'
@@ -21,14 +22,32 @@ load_dotenv(env_path)
 # REST API base URL
 REST_API_URL = "http://localhost:5060"
 
+# Context var to propagate Authorization header from HTTP request into tool calls
+current_auth_header: ContextVar[str | None] = ContextVar("current_auth_header", default=None)
+
 # Create MCP server
-server = Server("mcp-bridge")
+mcp = Server("mcp-bridge")
 
 
-@server.list_tools()
+@mcp.list_tools()
 async def list_tools() -> list[Tool]:
     """List all available tools."""
     return [
+        Tool(
+            name="GetAllTickets",
+            description="Gets all support tickets from the REST API with optional limit",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "maxResults": {
+                        "type": "integer",
+                        "description": "Maximum number of tickets to return (default: 5)",
+                        "default": 5
+                    }
+                },
+                "required": []
+            }
+        ),
         Tool(
             name="GetTicket",
             description="Gets a support ticket by ID from the REST API",
@@ -64,76 +83,202 @@ async def list_tools() -> list[Tool]:
     ]
 
 
-@server.call_tool()
+@mcp.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     """Handle tool calls by forwarding to REST API."""
-    
+
+    print(f"[TOOL CALL] Tool: {name}, Arguments: {arguments}")
+
+    # Forward Authorization header if present
+    auth_header = current_auth_header.get()
+    headers = {}
+    if auth_header:
+        headers["Authorization"] = auth_header
+        print(f"[TOOL CALL] Forwarding Authorization header")
+    else:
+        print(f"[TOOL CALL] No Authorization header to forward")
+
     async with httpx.AsyncClient() as client:
-        if name == "GetTicket":
+        if name == "GetAllTickets":
+            max_results = arguments.get("maxResults", 5)
+            try:
+                response = await client.get(
+                    f"{REST_API_URL}/api/tickets?maxResults={max_results}",
+                    headers=headers
+                )
+                if response.status_code == 200:
+                    result = response.text
+                    print(f"[TOOL CALL] GetAllTickets result: {result[:200]}...")
+                    return [TextContent(type="text", text=result)]
+                return [TextContent(type="text", text="Failed to retrieve tickets")]
+            except Exception as e:
+                print(f"[TOOL CALL] Error: {e}")
+                return [TextContent(type="text", text=f"Error calling REST API: {str(e)}")]
+
+        elif name == "GetTicket":
             ticket_id = arguments.get("ticket_id", "")
             try:
-                response = await client.get(f"{REST_API_URL}/api/tickets/{ticket_id}")
+                response = await client.get(
+                    f"{REST_API_URL}/api/tickets/{ticket_id}",
+                    headers=headers
+                )
                 if response.status_code == 200:
-                    return [TextContent(type="text", text=response.text)]
+                    result = response.text
+                    print(f"[TOOL CALL] GetTicket result: {result[:200]}...")
+                    return [TextContent(type="text", text=result)]
                 return [TextContent(type="text", text=f"Ticket '{ticket_id}' not found")]
             except Exception as e:
+                print(f"[TOOL CALL] Error: {e}")
                 return [TextContent(type="text", text=f"Error calling REST API: {str(e)}")]
-        
+
         elif name == "UpdateTicket":
             ticket_id = arguments.get("ticket_id", "")
             status = arguments.get("status", "")
             try:
                 response = await client.put(
                     f"{REST_API_URL}/api/tickets/{ticket_id}",
-                    json={"status": status}
+                    json={"status": status},
+                    headers=headers
                 )
                 if response.status_code == 200:
-                    return [TextContent(type="text", text=f"Ticket '{ticket_id}' status updated to '{status}'")]
+                    result = f"Ticket '{ticket_id}' status updated to '{status}'"
+                    print(f"[TOOL CALL] UpdateTicket result: {result}")
+                    return [TextContent(type="text", text=result)]
                 return [TextContent(type="text", text=f"Ticket '{ticket_id}' not found")]
             except Exception as e:
+                print(f"[TOOL CALL] Error: {e}")
                 return [TextContent(type="text", text=f"Error calling REST API: {str(e)}")]
-    
+
     return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
 
-# SSE transport for HTTP/SSE connections
-sse_transport = SseServerTransport("/messages/")
+# Global transport instance - single instance like .NET
+transport = None
+server_task = None
 
 
-async def handle_sse(request):
-    """Handle SSE connections."""
-    async with sse_transport.connect_sse(
-        request.scope, request.receive, request._send
-    ) as streams:
-        await server.run(
-            streams[0], streams[1], server.create_initialization_options()
+async def ensure_server_running():
+    """Ensure the MCP server is running with the Streamable HTTP transport."""
+    global transport, server_task
+
+    if transport is None:
+        transport = StreamableHTTPServerTransport(
+            mcp_session_id=None,  # Let the transport manage sessions
+            is_json_response_enabled=True
         )
-    return Response()
+
+        async def run_server():
+            async with transport.connect() as streams:
+                print("[MCP] Server connected and running...")
+                try:
+                    await mcp.run(
+                        streams[0],
+                        streams[1],
+                        mcp.create_initialization_options()
+                    )
+                except Exception as e:
+                    print(f"[MCP] Server error: {e}")
+                    import traceback
+                    traceback.print_exc()
+
+        server_task = asyncio.create_task(run_server())
+        await asyncio.sleep(0.1)  # Give it time to start
+        print("[MCP] Server started")
+
+    return transport
 
 
-async def handle_root(request):
-    """Root endpoint."""
-    return JSONResponse({
-        "name": "MCP Bridge Server",
-        "transport": "HTTP/SSE",
-        "endpoint": "/sse",
-        "tools": ["GetTicket", "UpdateTicket"]
-    })
+async def handle_mcp(scope, receive, send):
+    """Handle /mcp endpoint using Streamable HTTP transport."""
+    method = scope.get("method", "GET")
+    headers = dict(scope.get("headers", []))
+    session_id = headers.get(b"mcp-session-id", b"").decode() or None
+
+    # Capture Authorization header and set in context
+    auth_header = headers.get(b"authorization", b"").decode() or None
+    token = current_auth_header.set(auth_header)
+
+    print(f"[MCP] {method} request, session_id: {session_id}, auth_header: {'present' if auth_header else 'None'}")
+
+    t = await ensure_server_running()
+
+    try:
+        await t.handle_request(scope, receive, send)
+        print(f"[MCP] Request handled successfully")
+    except Exception as e:
+        print(f"[MCP] Error: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        current_auth_header.reset(token)
 
 
-# Create Starlette app
-from starlette.routing import Mount
-from starlette.responses import Response
+async def app(scope, receive, send):
+    """Main ASGI application."""
+    if scope["type"] == "lifespan":
+        while True:
+            message = await receive()
+            if message["type"] == "lifespan.startup":
+                print("[STARTUP] MCP Bridge Server starting...")
+                await send({"type": "lifespan.startup.complete"})
+            elif message["type"] == "lifespan.shutdown":
+                print("[SHUTDOWN] Shutting down...")
+                global transport, server_task
+                if transport:
+                    await transport.terminate()
+                await send({"type": "lifespan.shutdown.complete"})
+                return
+        return
 
-app = Starlette(
-    routes=[
-        Route("/", handle_root),
-        Route("/sse", handle_sse, methods=["GET"]),
-        Mount("/messages/", app=sse_transport.handle_post_message),
-    ]
-)
+    if scope["type"] != "http":
+        return
+
+    path = scope.get("path", "")
+    method = scope.get("method", "GET")
+
+    print(f"[APP] {method} {path}")
+
+    if path == "/mcp" or path == "/mcp/":
+        await handle_mcp(scope, receive, send)
+    elif path == "/" and method == "GET":
+        from starlette.responses import JSONResponse
+        response = JSONResponse({
+            "name": "MCP Bridge Server",
+            "version": "1.0.0",
+            "transport": "Streamable HTTP",
+            "endpoint": "/mcp",
+            "tools": ["GetAllTickets", "GetTicket", "UpdateTicket"]
+        })
+        await response(scope, receive, send)
+    elif path == "/health" and method == "GET":
+        from starlette.responses import JSONResponse
+        response = JSONResponse({"status": "healthy", "server": "MCP Bridge Server"})
+        await response(scope, receive, send)
+    else:
+        from starlette.responses import Response
+        response = Response(content="Not Found", status_code=404)
+        await response(scope, receive, send)
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5070)
+    port = 5070
+    url = f"http://localhost:{port}"
+
+    print("=" * 80)
+    print("              MCP Bridge Server (Streamable HTTP Transport)               ")
+    print("=" * 80)
+    print()
+    print(f"Server URL:      {url}")
+    print(f"MCP Endpoint:    {url}/mcp")
+    print(f"Health Check:    {url}/health")
+    print()
+    print("Available MCP Tools (calls REST API at :5060):")
+    print("   - GetAllTickets : Gets all support tickets from REST API")
+    print("   - GetTicket     : Gets a support ticket by ID")
+    print("   - UpdateTicket  : Updates a support ticket status")
+    print()
+    print(f"MCP Server ready! Connect your MCP client to {url}/mcp")
+    print()
+
+    uvicorn.run(app, host="0.0.0.0", port=port)

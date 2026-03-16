@@ -1,11 +1,11 @@
 # Lab 2 - Model Context Protocol (MCP) Workshop (Python)
 
-This lab demonstrates how to build and consume MCP (Model Context Protocol) servers using Python.
+This lab demonstrates how to build and consume MCP (Model Context Protocol) servers using Python with the Agent Framework RC4 packages.
 
 ## 🎯 Learning Goals
 
 1. **Build Local MCP Servers** - Using STDIO transport
-2. **Build Remote MCP Servers** - Using HTTP/SSE transport that calls REST APIs
+2. **Build Remote MCP Servers** - Using Streamable HTTP transport that calls REST APIs
 3. **Consume MCP Servers** - From AI Agents using Azure OpenAI
 
 ## 🏗️ Architecture
@@ -21,13 +21,13 @@ This lab demonstrates how to build and consume MCP (Model Context Protocol) serv
 │   (Consumes      │          │                             │
 │    MCP Servers)  │          └─────────────────────────────┘
 │                  │
-└────────┬─────────┘          REMOTE MCP (HTTP/SSE → REST)
+└────────┬─────────┘          REMOTE MCP (Streamable HTTP → REST)
          │                    ┌─────────────────────────────────────────────┐
          │                    │                                             │
-         │   HTTP/SSE         │   ┌─────────────┐   HTTP    ┌─────────────┐ │
+         │  Streamable HTTP   │   ┌─────────────┐   HTTP    ┌─────────────┐ │
          └───────────────────►│   │ mcp_bridge  │ ────────► │mcp_remote   │ │
                               │   │ Port: 5070  │           │server :5060 │ │
-                              │   │ /sse        │           │(REST API)   │ │
+                              │   │ /mcp        │           │(REST API)   │ │
                               │   └─────────────┘           └─────────────┘ │
                               │                                             │
                               └─────────────────────────────────────────────┘
@@ -51,41 +51,47 @@ For hands-on exercises, see **[begin/EXERCISES.md](begin/EXERCISES.md)**.
 ```
 lab2-mcp/
 ├── README.md
+├── data/
+│   └── tickets.json              # Shared ticket data (loaded by all servers)
 ├── begin/                          # Lab exercises (incomplete code)
 │   ├── EXERCISES.md              # Step-by-step exercises
 │   └── ...                       # Code to complete
-├── solution/                     # Complete working solution
-├── mcp-concepts.ipynb            # Educational notebook
-├── mcp_agent_client/             # AI Agent that consumes MCP servers
-│   └── main.py
-├── mcp_local_server/             # Local MCP Server (STDIO)
-│   └── main.py
-├── mcp_bridge/                   # MCP Bridge (HTTP/SSE → REST API)
-│   └── main.py
-└── mcp_remote_server/            # REST API backend (FastAPI)
-    └── main.py
+└── solution/                     # Complete working solution
+    ├── start_all.cmd             # Windows: launch all services
+    ├── start_all.sh              # macOS/Linux: launch all services
+    ├── mcp_agent_client/         # AI Agent that consumes MCP servers
+    │   └── main.py
+    ├── mcp_local_server/         # Local MCP Server (STDIO)
+    │   └── main.py
+    ├── mcp_bridge/               # MCP Bridge (Streamable HTTP → REST API)
+    │   └── main.py
+    └── mcp_remote_server/        # REST API backend (FastAPI)
+        └── main.py
 ```
 
 ## Components
 
 | Project | Transport | Port | Description |
 |---------|-----------|------|-------------|
-| **mcp_local_server** | STDIO | N/A | Local Python MCP with Config & Ticket tools |
+| **mcp_local_server** | STDIO | N/A | Local Python MCP with Ticket tools |
 | **mcp_remote_server** | HTTP | 5060 | REST API backend (FastAPI) |
-| **mcp_bridge** | HTTP/SSE | 5070 | MCP server that wraps REST API |
+| **mcp_bridge** | Streamable HTTP | 5070 | MCP server that wraps REST API |
 | **mcp_agent_client** | N/A | N/A | AI Agent consuming all MCP servers |
 
 ## MCP Tools
 
-### mcp_local_server (Local Python MCP Server)
-- `GetConfig` - Get configuration value by key
-- `UpdateConfig` - Update configuration value
-- `GetTicket` - Get support ticket by ID
-- `UpdateTicket` - Update support ticket status
+### All MCP Servers expose the same tools:
+- `GetAllTickets` - Get all support tickets (with optional `maxResults` limit)
+- `GetTicket` - Get support ticket by ID (e.g., TICKET-001)
+- `UpdateTicket` - Update support ticket status (Open, In Progress, Resolved, Closed)
 
-### mcp_bridge (calls REST API)
-- `GetTicket` - Get ticket via REST API
-- `UpdateTicket` - Update ticket via REST API
+## Sample Tickets
+
+| ID | Subject | Status | Description |
+|----|---------|--------|-------------|
+| TICKET-001 | Login issue | Open | Cannot login to the system |
+| TICKET-002 | Performance problem | In Progress | System is running slowly |
+| TICKET-003 | Data sync error | Open | Data not syncing properly |
 
 ## 🚀 Setup
 
@@ -108,8 +114,8 @@ source .venv/bin/activate  # Linux/Mac
 # Install dependencies (from labs/python folder)
 pip install -r requirements.txt
 
-# Navigate to the lab
-cd lab2-mcp
+# Navigate to the solution lab
+cd lab2-mcp/solution
 ```
 
 ### Configuration
@@ -132,29 +138,57 @@ export AZURE_OPENAI_API_KEY="your-api-key"
 
 ## 🚀 Running the Demo
 
-### Option 1: Local MCP Server only (Demo 1)
+### Quick Start (Windows)
 
-```bash
-# Run the Agent Client (starts local MCP server automatically)
-cd mcp_agent_client
-python main.py
+```cmd
+cd solution
+start_all.cmd
 ```
 
-### Option 2: Remote MCP Server (Demo 2)
+This launches:
+- MCP Remote Server (REST API) on port 5060
+- MCP Bridge (Streamable HTTP) on port 5070
+- MCP Agent Client (interactive menu)
+
+### Quick Start (macOS / Linux)
 
 ```bash
-# Terminal 1: Start REST API (port 5060)
-cd mcp_remote_server
-uvicorn main:app --port 5060
-
-# Terminal 2: Start MCP Bridge (port 5070)
-cd mcp_bridge
-python main.py
-
-# Terminal 3: Run the Agent Client
-cd mcp_agent_client
-python main.py
+cd solution
+chmod +x start_all.sh   # Make executable (first time only)
+./start_all.sh
 ```
+
+### Manual Start
+
+**Terminal 1 - REST API Backend:**
+```bash
+cd solution
+python -m mcp_remote_server.main
+```
+
+**Terminal 2 - MCP Bridge:**
+```bash
+cd solution
+python -m mcp_bridge.main
+```
+
+**Terminal 3 - Agent Client:**
+```bash
+cd solution
+python -m mcp_agent_client.main
+```
+
+## 💬 Usage
+
+1. Run `start_all.cmd` or start services manually
+2. In the Agent Client, select a demo:
+   - **Option 1**: Local MCP Server (STDIO) - standalone, no external services needed
+   - **Option 2**: Remote MCP Bridge (Streamable HTTP) - requires REST API and Bridge running
+3. Interact with the AI agent using natural language:
+   - "Get all tickets"
+   - "What is the status of TICKET-001?"
+   - "Update TICKET-002 status to Resolved"
+4. Type `back` to return to menu, `exit` to quit
 
 ## 📖 Key Concepts
 
@@ -163,7 +197,7 @@ python main.py
 | Transport | Use Case | Example |
 |-----------|----------|---------|
 | **STDIO** | Local servers on same machine | `python -m mcp_local_server.main` |
-| **HTTP/SSE** | Remote servers over network | `http://localhost:5070/sse` |
+| **Streamable HTTP** | Remote servers over network | `http://localhost:5070/mcp` |
 
 ### MCP Tool Definition (Python)
 
@@ -177,23 +211,24 @@ server = Server("mcp-local-server")
 async def list_tools() -> list[Tool]:
     return [
         Tool(
-            name="GetConfig",
-            description="Gets a configuration value by key",
+            name="GetAllTickets",
+            description="Gets all support tickets with optional limit",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "key": {"type": "string", "description": "The configuration key"}
+                    "maxResults": {"type": "integer", "description": "Max tickets to return", "default": 5}
                 },
-                "required": ["key"]
+                "required": []
             }
         )
     ]
 
 @server.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-    if name == "GetConfig":
-        key = arguments.get("key", "")
-        return [TextContent(type="text", text=f"Value for {key}")]
+    if name == "GetAllTickets":
+        max_results = arguments.get("maxResults", 5)
+        results = list(tickets.values())[:max_results]
+        return [TextContent(type="text", text=json.dumps(results, indent=2))]
 ```
 
 ### MCP Client Usage (Python)
@@ -201,7 +236,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 ```python
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 
 # STDIO transport (local)
 server_params = StdioServerParameters(
@@ -213,8 +248,8 @@ async with stdio_client(server_params) as (read, write):
         await session.initialize()
         tools = await session.list_tools()
 
-# HTTP/SSE transport (remote)
-async with sse_client("http://localhost:5070/sse") as (read, write):
+# Streamable HTTP transport (remote)
+async with streamablehttp_client("http://localhost:5070/mcp") as (read, write, _):
     async with ClientSession(read, write) as session:
         await session.initialize()
         result = await session.call_tool("GetTicket", {"ticket_id": "TICKET-001"})
@@ -255,7 +290,7 @@ if response.choices[0].message.tool_calls:
 
 ## 📚 Learn More
 
-- See [mcp-concepts.ipynb](mcp-concepts.ipynb) for detailed explanations
+- See [begin/mcp-concepts.ipynb](begin/mcp-concepts.ipynb) for detailed explanations
 - [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
 - [MCP Specification](https://modelcontextprotocol.io/)
 - [Azure OpenAI Service](https://learn.microsoft.com/en-us/azure/ai-services/openai/)
@@ -264,12 +299,13 @@ if response.choices[0].message.tool_calls:
 
 | Package | Version | Purpose |
 |---------|---------|---------|
+| `agent-framework-core` | 1.0.0rc4 | Agent Framework Core |
+| `agent-framework-azure-ai` | 1.0.0rc4 | Agent Framework Azure AI |
 | `mcp` | >=1.0.0 | MCP Python SDK |
 | `httpx` | >=0.27.0 | HTTP client for REST calls |
-| `httpx-sse` | >=0.4.0 | SSE support |
 | `openai` | >=1.50.0 | Azure OpenAI client |
 | `azure-identity` | >=1.17.0 | Azure authentication |
+| `azure-ai-projects` | latest | Azure AI Projects client |
 | `fastapi` | >=0.115.0 | REST API framework |
 | `uvicorn` | >=0.30.0 | ASGI server |
 | `pydantic` | >=2.9.0 | Data validation |
-

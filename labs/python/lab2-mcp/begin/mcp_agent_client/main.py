@@ -7,7 +7,7 @@ EXERCISES 1, 3, 4: MCP Agent Client
 This file contains exercises for:
 - Exercise 1: Configure Azure OpenAI credentials
 - Exercise 3: Connect to Local MCP Server
-- Exercise 4: Connect to Remote MCP Server (HTTP/SSE)
+- Exercise 4: Connect to Remote MCP Server (Streamable HTTP)
 
 Follow the instructions in EXERCISES.md to complete each exercise.
 ============================================================================
@@ -20,7 +20,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 from openai import AzureOpenAI
 from azure.identity import AzureCliCredential
 
@@ -140,55 +140,60 @@ print()
 #             for tool in tools.tools:
 #                 print(f"  - {tool.name}: {tool.description}")
             
-#             # STEP 3.5: Call GetConfig tool
-#             print("\nCalling GetConfig('theme')...")
-#             result = await session.call_tool("GetConfig", {"key": "theme"})
+#             # STEP 3.5: Call GetAllTickets tool
+#             print("\nCalling GetAllTickets()...")
+#             result = await session.call_tool("GetAllTickets", {})
 #             print(f"Result: {result.content[0].text}")
-            
-#             # Call UpdateConfig tool
-#             print("\nCalling UpdateConfig('theme', 'light')...")
-#             result = await session.call_tool("UpdateConfig", {"key": "theme", "value": "light"})
-#             print(f"Result: {result.content[0].text}")
-            
+#             
 #             # Call GetTicket tool
 #             print("\nCalling GetTicket('TICKET-001')...")
 #             result = await session.call_tool("GetTicket", {"ticket_id": "TICKET-001"})
 #             print(f"Result: {result.content[0].text}")
+#             
+#             # Call UpdateTicket tool
+#             print("\nCalling UpdateTicket('TICKET-001', 'Resolved')...")
+#             result = await session.call_tool("UpdateTicket", {"ticket_id": "TICKET-001", "status": "Resolved"})
+#             print(f"Result: {result.content[0].text}")
 
 
 # ============================================================================
-# EXERCISE 4: Connect to Remote MCP Server (HTTP/SSE)
+# EXERCISE 4: Connect to Remote MCP Server (Streamable HTTP)
 # ============================================================================
 # Uncomment the entire function below
 # ============================================================================
 # async def demo_remote_mcp():
-#     """Demo: Connect to remote MCP server via HTTP/SSE."""
+#     """Demo: Connect to remote MCP server via Streamable HTTP."""
 #     print("\n" + "=" * 60)
-#     print("Demo: Remote MCP Server (HTTP/SSE ? REST API)")
+#     print("Demo: Remote MCP Server (Streamable HTTP -> REST API)")
 #     print("=" * 60)
-    
-#     # STEP 4.1: Define the SSE endpoint URL
-#     url = "http://localhost:5070/sse"
+#
+#     # STEP 4.1: Define the Streamable HTTP endpoint URL
+#     url = "http://localhost:5070/mcp"
 #     print(f"\nConnecting to {url}...")
-    
+#
 #     try:
-#         # STEP 4.2: Connect using sse_client
-#         async with sse_client(url) as (read, write):
+#         # STEP 4.2: Connect using streamablehttp_client
+#         async with streamablehttp_client(url) as (read, write, _):
 #             async with ClientSession(read, write) as session:
 #                 # STEP 4.3: Initialize the session
 #                 await session.initialize()
-                
+#
 #                 # STEP 4.4: List available tools
 #                 tools = await session.list_tools()
 #                 print("\nAvailable tools:")
 #                 for tool in tools.tools:
 #                     print(f"  - {tool.name}: {tool.description}")
-                
-#                 # STEP 4.5: Call GetTicket tool (calls REST API)
+#
+#                 # STEP 4.5: Call GetAllTickets tool
+#                 print("\nCalling GetAllTickets() via REST API...")
+#                 result = await session.call_tool("GetAllTickets", {"maxResults": 5})
+#                 print(f"Result: {result.content[0].text}")
+#
+#                 # STEP 4.6: Call GetTicket tool (calls REST API)
 #                 print("\nCalling GetTicket('TICKET-001') via REST API...")
 #                 result = await session.call_tool("GetTicket", {"ticket_id": "TICKET-001"})
 #                 print(f"Result: {result.content[0].text}")
-                
+#
 #                 # Call UpdateTicket tool
 #                 print("\nCalling UpdateTicket('TICKET-001', 'Resolved') via REST API...")
 #                 result = await session.call_tool("UpdateTicket", {"ticket_id": "TICKET-001", "status": "Resolved"})
@@ -241,11 +246,11 @@ print()
             
 #             # Chat with AI
 #             messages = [
-#                 {"role": "system", "content": "You are a helpful assistant with access to configuration and ticket tools."},
-#                 {"role": "user", "content": "What is the current theme configuration?"}
+#                 {"role": "system", "content": "You are a helpful assistant with access to support ticket tools."},
+#                 {"role": "user", "content": "Show me all open tickets"}
 #             ]
-            
-#             print("\nUser: What is the current theme configuration?")
+#             
+#             print("\nUser: Show me all open tickets")
             
 #             response = client.chat.completions.create(
 #                 model=deployment,
@@ -273,7 +278,7 @@ async def main():
         print("=" * 60)
         print("Select a demo to run:")
         print("  1. Local MCP Server (Python via STDIO)")
-        print("  2. Remote MCP Server (HTTP/SSE)")
+        print("  2. Remote MCP Server (Streamable HTTP)")
         print("  3. AI Agent with MCP Tools (Bonus)")
         print("  4. Exit")
         print("=" * 60)

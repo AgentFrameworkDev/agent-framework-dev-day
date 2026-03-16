@@ -3,7 +3,7 @@ MCP Agent Client - AI Agent that consumes MCP servers.
 
 Demonstrates:
 1. Local MCP via STDIO transport
-2. Remote MCP via HTTP/SSE transport
+2. Remote MCP via Streamable HTTP transport
 """
 import asyncio
 import json
@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 from openai import AzureOpenAI
 from azure.identity import AzureCliCredential, ClientSecretCredential
 from azure.ai.projects import AIProjectClient
@@ -47,23 +47,20 @@ def find_config_path(start_path: str) -> str:
 
 
 def load_env_file(env_path: str) -> dict:
-    """Load environment variables from .env file (JSON format)."""
+    """Load environment variables from .env file (dotenv KEY=VALUE format)."""
     env_file = Path(env_path) / ".env"
     
     if not env_file.exists():
         return {}
     
     try:
-        with open(env_file, 'r') as f:
-            content = f.read()
-            env_vars = json.loads(content)
-            
-            # Set environment variables
-            for key, value in env_vars.items():
+        from dotenv import dotenv_values
+        env_vars = dict(dotenv_values(env_file))
+        for key, value in env_vars.items():
+            if value is not None:
                 os.environ[key] = str(value)
-            
-            return env_vars
-    except (json.JSONDecodeError, IOError) as e:
+        return env_vars
+    except Exception as e:
         print(f"Warning: Failed to load .env file: {e}")
         return {}
 
@@ -162,21 +159,21 @@ async def demo_local_mcp() -> bool:
 
 
 async def demo_remote_mcp() -> bool:
-    """Demo: Connect to remote MCP server via HTTP/SSE with interactive session."""
+    """Demo: Connect to remote MCP server via Streamable HTTP with interactive session."""
     print("\n" + "=" * 60)
-    print("      Demo 2: Remote MCP Bridge (HTTP/SSE -> REST API)")
+    print("      Demo 2: Remote MCP Bridge (Streamable HTTP -> REST API)")
     print("=" * 60)
     print()
     print("Architecture:")
     print("   AgentClient -> MCP Bridge (:5070) -> REST API (:5060)")
     print()
-    
-    url = "http://localhost:5070/sse"
+
+    url = "http://localhost:5070/mcp"
     print(f"Connecting to MCP Bridge at {url}...")
     print("   (Make sure both REST API :5060 and MCP Bridge :5070 are running)")
-    
+
     try:
-        async with sse_client(url) as (read, write):
+        async with streamablehttp_client(url) as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 
@@ -441,7 +438,7 @@ async def main():
         print("=" * 60)
         print("Select a demo to run:")
         print("  1. Local MCP Server (Python via STDIO)")
-        print("  2. Remote MCP Server (HTTP/SSE)")
+        print("  2. Remote MCP Server (Streamable HTTP)")
         print("  3. Exit")
         print("=" * 60)
         

@@ -1,7 +1,7 @@
 """
 MCP Local Server - Python implementation using STDIO transport.
 
-This server exposes configuration and ticket management tools via MCP.
+This server exposes ticket management tools via MCP.
 
 ============================================================================
 EXERCISE 2: Create the MCP Server
@@ -14,23 +14,31 @@ TODO: Uncomment the code below step by step as instructed in EXERCISES.md
 """
 import asyncio
 import json
+from pathlib import Path
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
+
+def load_tickets() -> dict[str, dict]:
+    """Load tickets from shared data/tickets.json file."""
+    data_file = Path(__file__).parent.parent.parent / "data" / "tickets.json"
+    if data_file.exists():
+        with open(data_file, "r") as f:
+            ticket_list = json.load(f)
+            return {t["id"]: t for t in ticket_list}
+    # Fallback if file not found
+    return {
+        "TICKET-001": {"id": "TICKET-001", "customerName": "Alice Johnson", "subject": "Login issue", "description": "Cannot login to the system", "status": "Open", "priority": "High"},
+        "TICKET-002": {"id": "TICKET-002", "customerName": "Bob Smith", "subject": "Performance problem", "description": "System is running slowly", "status": "In Progress", "priority": "Medium"},
+        "TICKET-003": {"id": "TICKET-003", "customerName": "Carol White", "subject": "Data sync error", "description": "Data not syncing properly", "status": "Open", "priority": "High"},
+    }
+
+
 # ============================================================================
 # In-memory storage (pre-configured - no changes needed)
 # ============================================================================
-config_store: dict[str, str] = {
-    "theme": "dark",
-    "language": "en",
-    "timeout": "30"
-}
-
-ticket_store: dict[str, dict] = {
-    "TICKET-001": {"id": "TICKET-001", "title": "Login issue", "status": "Open", "description": "Cannot login to the system"},
-    "TICKET-002": {"id": "TICKET-002", "title": "Performance problem", "status": "In Progress", "description": "System is running slowly"},
-}
+ticket_store: dict[str, dict] = load_tickets()
 
 # ============================================================================
 # STEP 2.1: Create MCP server instance
@@ -49,35 +57,18 @@ ticket_store: dict[str, dict] = {
 #     """List all available tools."""
 #     return [
 #         Tool(
-#             name="GetConfig",
-#             description="Gets a configuration value by key",
+#             name="GetAllTickets",
+#             description="Gets all support tickets with optional limit",
 #             inputSchema={
 #                 "type": "object",
 #                 "properties": {
-#                     "key": {
-#                         "type": "string",
-#                         "description": "The configuration key"
+#                     "maxResults": {
+#                         "type": "integer",
+#                         "description": "Maximum number of tickets to return (default: 5)",
+#                         "default": 5
 #                     }
 #                 },
-#                 "required": ["key"]
-#             }
-#         ),
-#         Tool(
-#             name="UpdateConfig",
-#             description="Updates a configuration value",
-#             inputSchema={
-#                 "type": "object",
-#                 "properties": {
-#                     "key": {
-#                         "type": "string",
-#                         "description": "The configuration key"
-#                     },
-#                     "value": {
-#                         "type": "string",
-#                         "description": "The new value"
-#                     }
-#                 },
-#                 "required": ["key", "value"]
+#                 "required": []
 #             }
 #         ),
 #         Tool(
@@ -124,17 +115,10 @@ ticket_store: dict[str, dict] = {
 # async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 #     """Handle tool calls."""
 #     
-#     if name == "GetConfig":
-#         key = arguments.get("key", "")
-#         if key in config_store:
-#             return [TextContent(type="text", text=f"Configuration '{key}' = '{config_store[key]}'")]
-#         return [TextContent(type="text", text=f"Configuration key '{key}' not found")]
-#     
-#     elif name == "UpdateConfig":
-#         key = arguments.get("key", "")
-#         value = arguments.get("value", "")
-#         config_store[key] = value
-#         return [TextContent(type="text", text=f"Configuration '{key}' updated to '{value}'")]
+#     if name == "GetAllTickets":
+#         max_results = arguments.get("maxResults", 5)
+#         result = list(ticket_store.values())[:max_results]
+#         return [TextContent(type="text", text=json.dumps(result, indent=2))]
 #     
 #     elif name == "GetTicket":
 #         ticket_id = arguments.get("ticket_id", "")

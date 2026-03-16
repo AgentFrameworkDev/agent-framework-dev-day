@@ -1,25 +1,38 @@
 """
 MCP Local Server - Python implementation using STDIO transport.
 
-This server exposes configuration and ticket management tools via MCP.
+This server exposes ticket management tools via MCP (same tools as MCP Bridge).
 """
 import asyncio
 import json
+import sys
+from pathlib import Path
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
-# In-memory storage
-config_store: dict[str, str] = {
-    "theme": "dark",
-    "language": "en",
-    "timeout": "30"
-}
 
-ticket_store: dict[str, dict] = {
-    "TICKET-001": {"id": "TICKET-001", "title": "Login issue", "status": "Open", "description": "Cannot login to the system"},
-    "TICKET-002": {"id": "TICKET-002", "title": "Performance problem", "status": "In Progress", "description": "System is running slowly"},
-}
+def load_tickets() -> dict[str, dict]:
+    """Load tickets from shared data/tickets.json file."""
+    # Find the data folder (lab2-mcp/data/tickets.json - up 2 levels from solution folder)
+    data_file = Path(__file__).parent.parent.parent / "data" / "tickets.json"
+    print(f"Looking for tickets at: {data_file}", file=sys.stderr)
+    if data_file.exists():
+        with open(data_file, "r") as f:
+            ticket_list = json.load(f)
+            print(f"Loaded {len(ticket_list)} tickets", file=sys.stderr)
+            return {t["id"]: t for t in ticket_list}
+    print(f"Warning: {data_file} not found, using fallback data", file=sys.stderr)
+    # Fallback if JSON file not found
+    return {
+        "TICKET-001": {"id": "TICKET-001", "subject": "Login issue", "status": "Open", "description": "Cannot login to the system"},
+        "TICKET-002": {"id": "TICKET-002", "subject": "Performance problem", "status": "In Progress", "description": "System is running slowly"},
+        "TICKET-003": {"id": "TICKET-003", "subject": "Data sync error", "status": "Open", "description": "Data not syncing properly"},
+    }
+
+
+# In-memory ticket storage loaded from shared JSON file
+tickets: dict[str, dict] = load_tickets()
 
 # Create MCP server
 server = Server("mcp-local-server")
@@ -27,38 +40,21 @@ server = Server("mcp-local-server")
 
 @server.list_tools()
 async def list_tools() -> list[Tool]:
-    """List all available tools."""
+    """List all available tools (same as MCP Bridge)."""
     return [
         Tool(
-            name="GetConfig",
-            description="Gets a configuration value by key",
+            name="GetAllTickets",
+            description="Gets all support tickets with optional limit",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "key": {
-                        "type": "string",
-                        "description": "The configuration key"
+                    "maxResults": {
+                        "type": "integer",
+                        "description": "Maximum number of tickets to return (default: 5)",
+                        "default": 5
                     }
                 },
-                "required": ["key"]
-            }
-        ),
-        Tool(
-            name="UpdateConfig",
-            description="Updates a configuration value",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "key": {
-                        "type": "string",
-                        "description": "The configuration key"
-                    },
-                    "value": {
-                        "type": "string",
-                        "description": "The new value"
-                    }
-                },
-                "required": ["key", "value"]
+                "required": []
             }
         ),
         Tool(
@@ -99,34 +95,27 @@ async def list_tools() -> list[Tool]:
 @server.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     """Handle tool calls."""
-    
-    if name == "GetConfig":
-        key = arguments.get("key", "")
-        if key in config_store:
-            return [TextContent(type="text", text=f"Configuration '{key}' = '{config_store[key]}'")]
-        return [TextContent(type="text", text=f"Configuration key '{key}' not found")]
-    
-    elif name == "UpdateConfig":
-        key = arguments.get("key", "")
-        value = arguments.get("value", "")
-        config_store[key] = value
-        return [TextContent(type="text", text=f"Configuration '{key}' updated to '{value}'")]
-    
+
+    if name == "GetAllTickets":
+        max_results = arguments.get("maxResults", 5)
+        all_tickets = list(tickets.values())[:max_results]
+        return [TextContent(type="text", text=json.dumps(all_tickets, indent=2))]
+
     elif name == "GetTicket":
         ticket_id = arguments.get("ticket_id", "")
-        if ticket_id in ticket_store:
-            ticket = ticket_store[ticket_id]
+        if ticket_id in tickets:
+            ticket = tickets[ticket_id]
             return [TextContent(type="text", text=json.dumps(ticket, indent=2))]
         return [TextContent(type="text", text=f"Ticket '{ticket_id}' not found")]
-    
+
     elif name == "UpdateTicket":
         ticket_id = arguments.get("ticket_id", "")
         status = arguments.get("status", "")
-        if ticket_id in ticket_store:
-            ticket_store[ticket_id]["status"] = status
+        if ticket_id in tickets:
+            tickets[ticket_id]["status"] = status
             return [TextContent(type="text", text=f"Ticket '{ticket_id}' status updated to '{status}'")]
         return [TextContent(type="text", text=f"Ticket '{ticket_id}' not found")]
-    
+
     return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
 

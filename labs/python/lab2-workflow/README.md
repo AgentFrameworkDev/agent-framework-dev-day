@@ -1,6 +1,6 @@
 # Lab 2: AI Workflow Patterns - Python
 
-This lab demonstrates three key workflow patterns for building AI applications using Python with Azure OpenAI.
+This lab demonstrates three key workflow patterns for building AI applications using Python with Azure OpenAI and the Agent Framework RC4 packages.
 
 ## 📓 Interactive Notebook
 
@@ -19,29 +19,24 @@ For hands-on exercises, see **[begin/EXERCISES.md](begin/EXERCISES.md)**.
 
 ```
 lab2-workflow/
-├── program.py                    # Main entry point
-├── README.md                     # This file
+├── README.md
 ├── begin/                          # Lab exercises (incomplete code)
 │   ├── EXERCISES.md              # Step-by-step exercises
 │   └── ...                       # Code to complete
-├── solution/                     # Complete working solution
-├── workflow-concepts.ipynb       # Interactive notebook with concepts
-└── workflow_lab/                 # Main package
-    ├── __init__.py
+└── solution/                     # Complete working solution
+    ├── start_all.cmd             # Windows: launch application
+    ├── start_all.sh              # macOS/Linux: launch application
+    ├── program.py                # Main entry point
     ├── common/                   # Shared components
-    │   ├── __init__.py
     │   ├── support_ticket.py     # SupportTicket model
     │   └── azure_openai_client_factory.py  # Azure OpenAI client
     ├── sequential/               # Sequential workflow
-    │   ├── __init__.py
     │   ├── executors.py          # Executor classes
     │   └── demo.py               # SequentialWorkflowDemo
-    ├── concurrent/               # Concurrent workflow
-    │   ├── __init__.py
+    ├── concurrent_workflow/      # Concurrent workflow
     │   ├── executors.py          # Executor classes
     │   └── demo.py               # ConcurrentWorkflowDemo
     └── human_in_the_loop/        # Human-in-the-loop workflow
-        ├── __init__.py
         ├── models.py             # Review models
         ├── executors.py          # Executor classes
         └── demo.py               # HumanInTheLoopWorkflowDemo
@@ -119,8 +114,8 @@ cd labs/python
 # Install dependencies (if not already done)
 pip install -r requirements.txt
 
-# Navigate to the lab
-cd lab2-workflow
+# Navigate to the solution lab
+cd lab2-workflow/solution
 ```
 
 ### Configuration
@@ -160,28 +155,47 @@ No additional configuration needed when running in Azure.
 
 ## 🏃 Running the Lab
 
-### Main Menu (Interactive)
+### Quick Start (Windows)
+
+```cmd
+cd solution
+start_all.cmd
+```
+
+### Quick Start (macOS / Linux)
+
 ```bash
+cd solution
+chmod +x start_all.sh   # Make executable (first time only)
+./start_all.sh
+```
+
+### Manual Start
+
+```bash
+cd solution
 python program.py
 ```
 
 ### Individual Demos
 ```bash
+cd solution
+
 # Sequential Workflow
-python -m workflow_lab.sequential.demo
+python -m sequential.demo
 
 # Concurrent Workflow
-python -m workflow_lab.concurrent.demo
+python -m concurrent_workflow.demo
 
 # Human-in-the-Loop Workflow
-python -m workflow_lab.human_in_the_loop.demo
+python -m human_in_the_loop.demo
 ```
 
 ## 📚 Core Components
 
 ### SupportTicket
 ```python
-from workflow_lab.common import SupportTicket, TicketPriority
+from common.support_ticket import SupportTicket, TicketPriority
 
 ticket = SupportTicket(
     ticket_id="TKT-12345",
@@ -195,7 +209,7 @@ ticket = SupportTicket(
 
 ### Azure OpenAI Client Factory
 ```python
-from workflow_lab.common import create_chat_client
+from common.azure_openai_client_factory import create_chat_client
 
 # Automatically uses appropriate authentication method
 client = create_chat_client()
@@ -203,7 +217,7 @@ client = create_chat_client()
 
 ### Executors
 ```python
-from workflow_lab.sequential.executors import TicketIntakeExecutor
+from sequential.executors import TicketIntakeExecutor
 
 executor = TicketIntakeExecutor()
 result, event = await executor.handle(ticket)
@@ -223,9 +237,18 @@ Add new supervisor actions to the human-in-the-loop workflow (e.g., "Request Mor
 ### Exercise 4: Workflow Composition
 Create a new workflow that combines sequential and concurrent patterns.
 
+## 📦 Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `agent-framework-core` | 1.0.0rc4 | Agent Framework Core |
+| `agent-framework-azure-ai` | 1.0.0rc4 | Agent Framework Azure AI |
+| `openai` | >=1.50.0 | Azure OpenAI client |
+| `azure-identity` | >=1.17.0 | Azure authentication |
+
 ## 📖 Additional Resources
 
 - [Azure OpenAI Documentation](https://learn.microsoft.com/azure/ai-services/openai/)
 - [Python asyncio Documentation](https://docs.python.org/3/library/asyncio.html)
-- Review `workflow-concepts.ipynb` for interactive examples
+- Review `begin/workflow-concepts.ipynb` for interactive examples
 
