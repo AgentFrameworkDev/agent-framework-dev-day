@@ -72,3 +72,4 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 | Date | Location | Sponsors |
 | --- | --- | --- |
 | 16-Jan-2026 | Burlington | Microsoft, Akumina |
+| 17-Apr-2026 | Nashua | Akumina |
