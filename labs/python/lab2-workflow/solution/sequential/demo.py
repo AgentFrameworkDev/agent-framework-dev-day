@@ -17,6 +17,7 @@ from openai import AzureOpenAI
 
 from common import SupportTicket, TicketPriority, create_chat_client
 from common.azure_openai_client_factory import get_deployment_name
+from common.ticket_loader import display_available_tickets, get_ticket_by_index, get_random_ticket, get_ticket_by_id
 from .executors import (
     TicketIntakeExecutor,
     CategorizationBridgeExecutor,
@@ -168,19 +169,19 @@ class SequentialWorkflowDemo:
             response_bridge=response_bridge,
         )
         
-        # Sample customer support ticket
-        sample_ticket = SupportTicket(
-            ticket_id="TKT-12345",
-            customer_id="CUST-12345",
-            customer_name="John Smith",
-            subject="Unable to access my account after password reset",
-            description=(
-                "I tried to reset my password yesterday but now I cannot log in. "
-                "I've tried multiple times and keep getting an 'invalid credentials' error. "
-                "This is urgent as I need to access my billing information."
-            ),
-            priority=TicketPriority.HIGH,
-        )
+        # Load a ticket from the data file
+        display_available_tickets()
+        print()
+        user_input = input("Enter ticket number (1-5) or press Enter for random: ").strip()
+        
+        if not user_input:
+            sample_ticket = get_random_ticket()
+            print(f"Randomly selected: {sample_ticket.ticket_id}")
+        elif user_input.isdigit():
+            sample_ticket = get_ticket_by_index(int(user_input))
+        else:
+            sample_ticket = get_ticket_by_id(user_input) or get_random_ticket()
+        print()
         
         print("Incoming Support Ticket:")
         print(f"   Ticket ID: {sample_ticket.ticket_id}")

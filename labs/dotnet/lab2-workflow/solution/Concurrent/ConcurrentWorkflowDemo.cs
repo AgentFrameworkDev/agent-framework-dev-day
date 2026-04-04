@@ -62,7 +62,7 @@ public static class ConcurrentWorkflowDemo
         // Build the workflow with fan-out and fan-in edges
         var workflow = new WorkflowBuilder(startExecutor)
             .AddFanOutEdge(startExecutor, targets: [billingExpert, technicalExpert])
-            .AddFanInEdge(sources: [billingExpert, technicalExpert], aggregationExecutor)
+            .AddFanInBarrierEdge(sources: [billingExpert, technicalExpert], aggregationExecutor)
             .WithOutputFrom(aggregationExecutor)
             .Build();
 
@@ -76,7 +76,7 @@ public static class ConcurrentWorkflowDemo
         Console.WriteLine();
 
         // Execute the workflow in streaming mode
-        await using StreamingRun run = await InProcessExecution.StreamAsync(workflow, customerQuestion);
+        await using StreamingRun run = await InProcessExecution.RunStreamingAsync(workflow, customerQuestion);
         await foreach (WorkflowEvent evt in run.WatchStreamAsync())
         {
             if (evt is WorkflowOutputEvent output)

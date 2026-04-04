@@ -5,7 +5,6 @@
 using System.ClientModel;
 using Azure.AI.OpenAI;
 using Azure.Identity;
-using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using ModelContextProtocol.Client;
@@ -61,17 +60,17 @@ while (running)
     var choice = Console.ReadLine()?.Trim();
     Console.WriteLine();
 
-    bool continueToMenu = true;
+    bool returnToMenu = true;
     
     try
     {
         switch (choice)
         {
             case "1":
-                continueToMenu = await DemoLocalDotNetMcp(configuration, endpoint, deploymentName);
+                returnToMenu = await DemoLocalDotNetMcp(configuration, endpoint, deploymentName);
                 break;
             case "2":
-                continueToMenu = await DemoRemoteMcp(configuration, endpoint, deploymentName);
+                returnToMenu = await DemoRemoteMcp(configuration, endpoint, deploymentName);
                 break;
             case "3":
                 running = false;
@@ -95,7 +94,7 @@ while (running)
     }
 
     // Exit application if user typed 'exit' or 'quit' in the session
-    if (continueToMenu)
+    if (!returnToMenu)
     {
         running = false;
         continue;
@@ -179,7 +178,7 @@ static async Task<bool> DemoLocalDotNetMcp(IConfiguration configuration, string 
         Arguments = ["run", "--project", mcpLocalProject],
     });
 
-    await using var mcpClient = await McpClientFactory.CreateAsync(clientTransport);
+    await using var mcpClient = await McpClient.CreateAsync(clientTransport);
 
     Console.WriteLine("Connected to Local .NET MCP Server");
 
@@ -192,17 +191,23 @@ static async Task<bool> DemoLocalDotNetMcp(IConfiguration configuration, string 
     }
     Console.WriteLine();
 
-    // Create AI Agent with MCP tools
+    // Create IChatClient with MCP tools for function invocation
     // Use AsIChatClient() to convert Azure.AI.OpenAI ChatClient to Microsoft.Extensions.AI IChatClient
-    AIAgent agent = CreateAzureOpenAIClient(configuration, endpoint)
+    var chatClient = CreateAzureOpenAIClient(configuration, endpoint)
         .GetChatClient(deploymentName)
         .AsIChatClient()
-        .CreateAIAgent(
-            instructions: "You are a configuration management assistant. Help users get and update configurations using the available MCP tools.",
-            tools: [.. tools.Cast<AITool>()]);
+        .AsBuilder()
+        .UseFunctionInvocation()
+        .Build();
+
+    // Create ChatOptions with MCP tools
+    var chatOptions = new ChatOptions
+    {
+        Tools = [.. tools.Select(t => (AITool)t)]
+    };
 
     // Interactive session
-    return await RunInteractiveSession(agent, "Local .NET MCP");
+    return await RunInteractiveSession(chatClient, chatOptions, "Local .NET MCP");
 }
 
 /// <summary>
@@ -212,24 +217,23 @@ static async Task<bool> DemoLocalDotNetMcp(IConfiguration configuration, string 
 static async Task<bool> DemoRemoteMcp(IConfiguration configuration, string endpoint, string deploymentName)
 {
     Console.WriteLine("===============================================================");
-    Console.WriteLine("      Demo 2: Remote MCP Bridge (HTTP/SSE -> REST API)        ");
+    Console.WriteLine("      Demo 2: Remote MCP Bridge (HTTP -> REST API)            ");
     Console.WriteLine("===============================================================");
     Console.WriteLine();
     Console.WriteLine("Architecture:");
     Console.WriteLine("   AgentClient -> MCP Bridge (:5070) -> REST API (:5060)");
     Console.WriteLine();
 
-    Console.WriteLine("Connecting to MCP Bridge at http://localhost:5070/sse...");
+    Console.WriteLine("Connecting to MCP Bridge at http://localhost:5070/mcp...");
     Console.WriteLine("   (Make sure both REST API :5060 and MCP Bridge :5070 are running)");
 
-    // Create MCP client for MCP Bridge using SSE transport
-    var clientTransport = new SseClientTransport(new SseClientTransportOptions
+    // Create MCP client for MCP Bridge using HTTP transport (Streamable HTTP)
+    var clientTransport = new HttpClientTransport(new HttpClientTransportOptions
     {
-        Name = "McpBridge",
-        Endpoint = new Uri("http://localhost:5070/sse"),
+        Endpoint = new Uri("http://localhost:5070/mcp"),
     });
 
-    await using var mcpClient = await McpClientFactory.CreateAsync(clientTransport);
+    await using var mcpClient = await McpClient.CreateAsync(clientTransport);
 
     Console.WriteLine("Connected to MCP Bridge");
 
@@ -242,35 +246,45 @@ static async Task<bool> DemoRemoteMcp(IConfiguration configuration, string endpo
     }
     Console.WriteLine();
 
-    // Create AI Agent with MCP tools
+    // Create IChatClient with MCP tools for function invocation
     // Use AsIChatClient() to convert Azure.AI.OpenAI ChatClient to Microsoft.Extensions.AI IChatClient
-    AIAgent agent = CreateAzureOpenAIClient(configuration, endpoint)
+    var chatClient = CreateAzureOpenAIClient(configuration, endpoint)
         .GetChatClient(deploymentName)
         .AsIChatClient()
-        .CreateAIAgent(
-            instructions: "You are a support ticket management assistant. Help users get and update support tickets using the available MCP tools. The MCP tools call a REST API backend.",
-            tools: [.. tools.Cast<AITool>()]);
+        .AsBuilder()
+        .UseFunctionInvocation()
+        .Build();
+
+    // Create ChatOptions with MCP tools
+    var chatOptions = new ChatOptions
+    {
+        Tools = [.. tools.Select(t => (AITool)t)]
+    };
 
     // Interactive session
-    return await RunInteractiveSession(agent, "Remote MCP Bridge");
+    return await RunInteractiveSession(chatClient, chatOptions, "Remote MCP Bridge");
 }
 
 /// <summary>
-/// Run an interactive session with the agent
+/// Run an interactive session with the chat client
 /// </summary>
 /// <returns>True to return to menu, false to exit application</returns>
-static async Task<bool> RunInteractiveSession(AIAgent agent, string serverName)
+static async Task<bool> RunInteractiveSession(IChatClient chatClient, ChatOptions chatOptions, string serverName)
 {
     Console.WriteLine($"Starting interactive session with {serverName}");
     Console.WriteLine("   Type 'back' to return to the main menu");
     Console.WriteLine("   Type 'exit' or 'quit' to exit the application");
     Console.WriteLine("   Example prompts:");
-    Console.WriteLine("   - Get all configurations");
-    Console.WriteLine("   - What is the value of app.name?");
-    Console.WriteLine("   - Update feature.darkMode to true");
+    Console.WriteLine("   - Get all tickets");
+    Console.WriteLine("   - What is the status of TICKET-001?");
+    Console.WriteLine("   - Update TICKET-002 status to Resolved");
     Console.WriteLine();
 
-    var thread = agent.GetNewThread();
+    // Maintain conversation history with system message
+    var conversation = new List<ChatMessage>
+    {
+        new(ChatRole.System, "You are a support ticket management assistant. Help users get and update support tickets using the available MCP tools.")
+    };
 
     while (true)
     {
@@ -297,12 +311,19 @@ static async Task<bool> RunInteractiveSession(AIAgent agent, string serverName)
 
         try
         {
+            // Add user message to conversation
+            conversation.Add(new ChatMessage(ChatRole.User, input));
+
             Console.WriteLine();
-            var response = await agent.RunAsync(input, thread);
+            var response = await chatClient.GetResponseAsync(conversation, chatOptions);
+            
+            // Add assistant response to conversation for context
+            conversation.Add(new ChatMessage(ChatRole.Assistant, response.Text ?? ""));
+            
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("Agent: ");
             Console.ResetColor();
-            Console.WriteLine(response);
+            Console.WriteLine(response.Text);
             Console.WriteLine();
         }
         catch (Exception ex)

@@ -23,11 +23,9 @@ from pathlib import Path
 
 
 def load_env_from_root():
-    """Load environment variables from .env file in the root python folder."""
-    # Find the root python folder (2 levels up from solution folder)
+    """Load environment variables from .env file in the python folder."""
     current_dir = Path(__file__).resolve().parent
-    root_dir = current_dir.parent.parent  # lab4-workflow -> python
-    env_file = root_dir / ".env"
+    env_file = current_dir / ".env"
     
     if env_file.exists():
         print(f"Loading configuration from: {env_file}")

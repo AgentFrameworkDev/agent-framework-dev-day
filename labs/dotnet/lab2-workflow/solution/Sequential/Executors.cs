@@ -7,6 +7,8 @@ namespace WorkflowLab.Sequential;
 /// <summary>
 /// Executor that handles ticket intake and validation.
 /// </summary>
+[SendsMessage(typeof(ChatMessage))]
+[SendsMessage(typeof(TurnToken))]
 internal sealed class TicketIntakeExecutor() : Executor<SupportTicket>("TicketIntake")
 {
     public override async ValueTask HandleAsync(SupportTicket ticket, IWorkflowContext context, CancellationToken cancellationToken = default)
@@ -36,6 +38,8 @@ internal sealed class TicketIntakeExecutor() : Executor<SupportTicket>("TicketIn
 /// <summary>
 /// Bridge executor that processes categorization output and prepares for response generation.
 /// </summary>
+[SendsMessage(typeof(ChatMessage))]
+[SendsMessage(typeof(TurnToken))]
 internal sealed class CategorizationBridgeExecutor() : Executor<List<ChatMessage>>("CategorizationBridge")
 {
     public override async ValueTask HandleAsync(List<ChatMessage> messages, IWorkflowContext context, CancellationToken cancellationToken = default)
@@ -61,6 +65,7 @@ internal sealed class CategorizationBridgeExecutor() : Executor<List<ChatMessage
 /// <summary>
 /// Bridge executor that processes the final response from the AI agent.
 /// </summary>
+[YieldsOutput(typeof(string))]
 internal sealed class ResponseBridgeExecutor() : Executor<List<ChatMessage>>("ResponseBridge")
 {
     public override async ValueTask HandleAsync(List<ChatMessage> messages, IWorkflowContext context, CancellationToken cancellationToken = default)

@@ -1,81 +1,123 @@
 // Copyright (c) Microsoft. All rights reserved.
 // In-memory store for customer support tickets
+// Loads tickets from shared data/tickets.json file
 
+using System.Text.Json;
 using RemoteServer.Models;
 
 namespace RemoteServer.Services;
 
 /// <summary>
 /// In-memory store for customer support tickets.
-/// In a real application, this would be backed by a database.
+/// Loads initial data from shared data/tickets.json file.
 /// </summary>
 public class TicketStore
 {
     private readonly Dictionary<string, SupportTicket> _tickets = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public TicketStore()
     {
-        // Seed with sample tickets
-        SeedSampleTickets();
+        LoadTicketsFromFile();
     }
 
-    private void SeedSampleTickets()
+    private void LoadTicketsFromFile()
     {
-        var tickets = new[]
+        // Find the data folder (root/data/tickets.json)
+        var baseDir = AppContext.BaseDirectory;
+        var dataFile = FindDataFile(baseDir);
+        
+        if (dataFile != null && File.Exists(dataFile))
         {
-            new SupportTicket
+            try
             {
-                Id = "TKT-001",
-                CustomerId = "CUST-101",
-                CustomerName = "John Smith",
-                Subject = "Cannot login to my account",
-                Description = "I'm getting an 'invalid credentials' error even though I'm sure my password is correct.",
-                Status = TicketStatus.Open,
-                Priority = TicketPriority.High,
-                CreatedAt = DateTime.UtcNow.AddDays(-2)
-            },
-            new SupportTicket
-            {
-                Id = "TKT-002",
-                CustomerId = "CUST-102",
-                CustomerName = "Sarah Johnson",
-                Subject = "Billing discrepancy",
-                Description = "I was charged twice for my subscription this month.",
-                Status = TicketStatus.InProgress,
-                Priority = TicketPriority.Critical,
-                AssignedTo = "billing-team",
-                CreatedAt = DateTime.UtcNow.AddDays(-1)
-            },
-            new SupportTicket
-            {
-                Id = "TKT-003",
-                CustomerId = "CUST-103",
-                CustomerName = "Mike Wilson",
-                Subject = "Feature request: Dark mode",
-                Description = "Would love to have a dark mode option in the app.",
-                Status = TicketStatus.Open,
-                Priority = TicketPriority.Low,
-                CreatedAt = DateTime.UtcNow.AddDays(-5)
-            },
-            new SupportTicket
-            {
-                Id = "TKT-004",
-                CustomerId = "CUST-104",
-                CustomerName = "Emily Brown",
-                Subject = "App crashes on startup",
-                Description = "After the latest update, the app crashes immediately when I open it.",
-                Status = TicketStatus.Resolved,
-                Priority = TicketPriority.High,
-                AssignedTo = "dev-team",
-                Resolution = "Fixed in version 2.1.5. User advised to update the app.",
-                CreatedAt = DateTime.UtcNow.AddDays(-3)
+                var json = File.ReadAllText(dataFile);
+                var ticketDtos = JsonSerializer.Deserialize<TicketDto[]>(json, JsonOptions);
+                
+                if (ticketDtos != null)
+                {
+                    foreach (var dto in ticketDtos)
+                    {
+                        var ticket = new SupportTicket
+                        {
+                            Id = dto.Id,
+                            CustomerId = dto.CustomerId ?? "",
+                            CustomerName = dto.CustomerName ?? "",
+                            Subject = dto.Subject ?? "",
+                            Description = dto.Description ?? "",
+                            Status = ParseStatus(dto.Status),
+                            Priority = ParsePriority(dto.Priority),
+                            AssignedTo = dto.AssignedTo,
+                            CreatedAt = DateTime.UtcNow.AddDays(-Random.Shared.Next(1, 5)),
+                            UpdatedAt = DateTime.UtcNow
+                        };
+                        _tickets[ticket.Id] = ticket;
+                    }
+                    Console.WriteLine($"Loaded {_tickets.Count} tickets from {dataFile}");
+                    return;
+                }
             }
-        };
-
-        foreach (var ticket in tickets)
-        {
-            _tickets[ticket.Id] = ticket;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading tickets from file: {ex.Message}");
+            }
         }
+        
+        Console.WriteLine("Warning: Could not load tickets from data/tickets.json, using empty store");
+    }
+
+    private static string? FindDataFile(string startPath)
+    {
+        // Try to find data/tickets.json by traversing up directories
+        var current = new DirectoryInfo(startPath);
+        while (current != null)
+        {
+            var dataFile = Path.Combine(current.FullName, "data", "tickets.json");
+            if (File.Exists(dataFile))
+                return dataFile;
+            
+            // Also check if we're in dotnet folder and need to go up one more level
+            if (current.Name.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+            {
+                var rootDataFile = Path.Combine(current.Parent?.FullName ?? "", "data", "tickets.json");
+                if (File.Exists(rootDataFile))
+                    return rootDataFile;
+            }
+            
+            current = current.Parent;
+        }
+        return null;
+    }
+
+    private static TicketStatus ParseStatus(string? status) => status?.ToLowerInvariant() switch
+    {
+        "open" => TicketStatus.Open,
+        "inprogress" or "in progress" => TicketStatus.InProgress,
+        "resolved" => TicketStatus.Resolved,
+        "closed" => TicketStatus.Closed,
+        _ => TicketStatus.Open
+    };
+
+    private static TicketPriority ParsePriority(string? priority) => priority?.ToLowerInvariant() switch
+    {
+        "low" => TicketPriority.Low,
+        "medium" => TicketPriority.Medium,
+        "high" => TicketPriority.High,
+        "critical" => TicketPriority.Critical,
+        _ => TicketPriority.Medium
+    };
+
+    // DTO for JSON deserialization
+    private class TicketDto
+    {
+        public string Id { get; set; } = "";
+        public string? CustomerId { get; set; }
+        public string? CustomerName { get; set; }
+        public string? Subject { get; set; }
+        public string? Description { get; set; }
+        public string? Status { get; set; }
+        public string? Priority { get; set; }
+        public string? AssignedTo { get; set; }
     }
 
     public SupportTicket? GetTicket(string ticketId)

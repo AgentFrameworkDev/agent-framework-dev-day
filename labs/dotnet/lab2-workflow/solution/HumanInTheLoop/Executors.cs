@@ -7,6 +7,8 @@ namespace WorkflowLab.HumanInTheLoop;
 /// <summary>
 /// Executor that handles ticket intake and sends to AI agent.
 /// </summary>
+[SendsMessage(typeof(ChatMessage))]
+[SendsMessage(typeof(TurnToken))]
 internal sealed class HumanInTheLoopTicketIntakeExecutor() : Executor<SupportTicket>("TicketIntake")
 {
     public static SupportTicket? CurrentTicket { get; private set; }
@@ -33,13 +35,14 @@ internal sealed class HumanInTheLoopTicketIntakeExecutor() : Executor<SupportTic
             """;
 
         await context.SendMessageAsync(new ChatMessage(ChatRole.User, ticketText), cancellationToken);
-        await context.SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken);
+        await context.SendMessageAsync(new TurnToken(), cancellationToken);
     }
 }
 
 /// <summary>
 /// Bridge executor that processes AI draft and requests supervisor review.
 /// </summary>
+[SendsMessage(typeof(SupervisorReviewRequest))]
 internal sealed class DraftBridgeExecutor() : Executor<List<ChatMessage>>("DraftBridge")
 {
     public override async ValueTask HandleAsync(List<ChatMessage> messages, IWorkflowContext context, CancellationToken cancellationToken = default)
@@ -71,6 +74,7 @@ internal sealed class DraftBridgeExecutor() : Executor<List<ChatMessage>>("Draft
 /// <summary>
 /// Executor that finalizes the response based on supervisor decision.
 /// </summary>
+[YieldsOutput(typeof(string))]
 internal sealed class FinalizeExecutor() : Executor<SupervisorDecision>("Finalize")
 {
     public override async ValueTask HandleAsync(SupervisorDecision decision, IWorkflowContext context, CancellationToken cancellationToken = default)

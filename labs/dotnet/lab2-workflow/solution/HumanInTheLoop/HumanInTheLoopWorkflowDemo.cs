@@ -41,17 +41,28 @@ public static class HumanInTheLoopWorkflowDemo
         // Build the workflow
         var workflow = BuildWorkflow(chatClient);
 
-        // Sample support ticket
-        var sampleTicket = new SupportTicket(
-            TicketId: "TKT-78542",
-            CustomerId: "CUST-12345",
-            CustomerName: "Sarah Johnson",
-            Subject: "Request for full refund on subscription",
-            Description: "I signed up for the annual premium plan last week but the features don't work as advertised. " +
-                         "The video conferencing keeps dropping and the file storage is extremely slow. " +
-                         "I want a full refund and to cancel my subscription immediately.",
-            Priority: TicketPriority.High
-        );
+        // Load a ticket from the data file
+        await TicketLoader.DisplayAvailableTicketsAsync();
+        Console.WriteLine();
+        Console.Write("Enter ticket number (1-5) or press Enter for random: ");
+        var input = Console.ReadLine()?.Trim();
+        
+        SupportTicket sampleTicket;
+        if (string.IsNullOrEmpty(input))
+        {
+            sampleTicket = await TicketLoader.GetRandomTicketAsync();
+            Console.WriteLine($"Randomly selected: {sampleTicket.TicketId}");
+        }
+        else if (int.TryParse(input, out int index))
+        {
+            sampleTicket = await TicketLoader.GetTicketByIndexAsync(index);
+        }
+        else
+        {
+            sampleTicket = await TicketLoader.GetTicketByIdAsync(input) 
+                ?? await TicketLoader.GetRandomTicketAsync();
+        }
+        Console.WriteLine();
 
         Console.WriteLine("Incoming Support Ticket:");
         Console.WriteLine($"   Ticket ID: {sampleTicket.TicketId}");
@@ -62,26 +73,30 @@ public static class HumanInTheLoopWorkflowDemo
         Console.WriteLine();
 
         // Execute the workflow
-        await using StreamingRun handle = await InProcessExecution.StreamAsync(workflow, sampleTicket);
+        await using StreamingRun handle = await InProcessExecution.RunStreamingAsync(workflow, sampleTicket);
         await foreach (WorkflowEvent evt in handle.WatchStreamAsync())
         {
             switch (evt)
             {
                 case RequestInfoEvent requestInputEvt:
                     // Handle human supervisor review request
-                    ExternalResponse response = HandleSupervisorReview(requestInputEvt.Request);
-                    await handle.SendResponseAsync(response);
+                    await handle.SendResponseAsync(HandleSupervisorReview(requestInputEvt.Request));
                     break;
 
                 case WorkflowOutputEvent outputEvt:
-                    // The workflow has completed
                     Console.WriteLine();
-                    Console.WriteLine($"{outputEvt.Data}");
-                    Console.WriteLine();
-                    Console.WriteLine("Human-in-the-loop workflow completed!");
-                    return;
+                    Console.WriteLine("=== Workflow Output ===");
+                    Console.WriteLine(outputEvt.Data);
+                    break;
+
+                case ExecutorCompletedEvent completedEvt:
+                    Console.WriteLine($"[{completedEvt.ExecutorId}] completed");
+                    break;
             }
         }
+
+        Console.WriteLine();
+        Console.WriteLine("Human-in-the-loop workflow completed!");
     }
 
     private static Workflow BuildWorkflow(IChatClient chatClient)
@@ -124,7 +139,7 @@ public static class HumanInTheLoopWorkflowDemo
 
     private static ExternalResponse HandleSupervisorReview(ExternalRequest request)
     {
-        var reviewRequest = request.DataAs<SupervisorReviewRequest>();
+        request.TryGetDataAs<SupervisorReviewRequest>(out var reviewRequest);
 
         if (reviewRequest == null)
         {

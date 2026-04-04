@@ -22,6 +22,7 @@ from openai import AzureOpenAI
 
 from common import SupportTicket, TicketPriority, create_chat_client
 from common.azure_openai_client_factory import get_deployment_name
+from common.ticket_loader import display_available_tickets, get_ticket_by_index, get_random_ticket, get_ticket_by_id
 from .models import SupervisorReviewRequest, SupervisorDecision, ReviewAction
 from .executors import (
     HumanInTheLoopTicketIntakeExecutor,
@@ -212,19 +213,19 @@ class HumanInTheLoopWorkflowDemo:
             finalize=finalize,
         )
         
-        # Sample support ticket
-        sample_ticket = SupportTicket(
-            ticket_id="TKT-78542",
-            customer_id="CUST-12345",
-            customer_name="Sarah Johnson",
-            subject="Request for full refund on subscription",
-            description=(
-                "I signed up for the annual premium plan last week but the features don't work as advertised. "
-                "The video conferencing keeps dropping and the file storage is extremely slow. "
-                "I want a full refund and to cancel my subscription immediately."
-            ),
-            priority=TicketPriority.HIGH,
-        )
+        # Load a ticket from the data file
+        display_available_tickets()
+        print()
+        user_input = input("Enter ticket number (1-5) or press Enter for random: ").strip()
+        
+        if not user_input:
+            sample_ticket = get_random_ticket()
+            print(f"Randomly selected: {sample_ticket.ticket_id}")
+        elif user_input.isdigit():
+            sample_ticket = get_ticket_by_index(int(user_input))
+        else:
+            sample_ticket = get_ticket_by_id(user_input) or get_random_ticket()
+        print()
         
         print("Incoming Support Ticket:")
         print(f"   Ticket ID: {sample_ticket.ticket_id}")
@@ -239,6 +240,7 @@ class HumanInTheLoopWorkflowDemo:
         
         # Display final output
         print()
+        print("=== Workflow Output ===")
         final_event = events[-1]
         print(final_event.data)
         print()

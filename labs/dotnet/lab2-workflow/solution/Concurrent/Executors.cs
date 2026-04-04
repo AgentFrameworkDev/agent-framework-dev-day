@@ -6,6 +6,8 @@ namespace WorkflowLab.Concurrent;
 /// <summary>
 /// Executor that starts the concurrent processing by broadcasting messages to all connected agents.
 /// </summary>
+[SendsMessage(typeof(ChatMessage))]
+[SendsMessage(typeof(TurnToken))]
 internal sealed class ConcurrentStartExecutor() : Executor<string>("ConcurrentStart")
 {
     public override async ValueTask HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken = default)
@@ -24,6 +26,7 @@ internal sealed class ConcurrentStartExecutor() : Executor<string>("ConcurrentSt
 /// <summary>
 /// Executor that aggregates the results from multiple concurrent agents.
 /// </summary>
+[YieldsOutput(typeof(string))]
 internal sealed class ConcurrentAggregationExecutor() : Executor<List<ChatMessage>>("ConcurrentAggregation")
 {
     private readonly List<ChatMessage> _messages = [];

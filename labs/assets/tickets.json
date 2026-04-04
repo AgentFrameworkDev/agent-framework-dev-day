@@ -1,0 +1,49 @@
+[
+  {
+    "id": "TICKET-001",
+    "customerId": "CUST-101",
+    "customerName": "John Smith",
+    "subject": "Login issue",
+    "description": "Cannot login to the system",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "TICKET-002",
+    "customerId": "CUST-102",
+    "customerName": "Sarah Johnson",
+    "subject": "Performance problem",
+    "description": "System is running slowly",
+    "status": "InProgress",
+    "priority": "Medium",
+    "assignedTo": "dev-team"
+  },
+  {
+    "id": "TICKET-003",
+    "customerId": "CUST-103",
+    "customerName": "Mike Wilson",
+    "subject": "Data sync error",
+    "description": "Data not syncing properly",
+    "status": "Open",
+    "priority": "Medium"
+  },
+  {
+    "id": "TICKET-004",
+    "customerId": "CUST-104",
+    "customerName": "Emily Davis",
+    "subject": "Password reset not working",
+    "description": "Cannot receive password reset email",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "TICKET-005",
+    "customerId": "CUST-105",
+    "customerName": "Robert Brown",
+    "subject": "Dashboard loading slowly",
+    "description": "Dashboard takes over 30 seconds to load",
+    "status": "InProgress",
+    "priority": "Low",
+    "assignedTo": "frontend-team"
+  }
+]

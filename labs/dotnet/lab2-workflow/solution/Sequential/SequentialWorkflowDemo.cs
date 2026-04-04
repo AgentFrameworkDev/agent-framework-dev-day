@@ -81,17 +81,28 @@ public static class SequentialWorkflowDemo
             .WithOutputFrom(responseBridge)
             .Build();
 
-        // Sample customer support ticket
-        var sampleTicket = new SupportTicket(
-            TicketId: "TKT-12345",
-            CustomerId: "CUST-12345",
-            CustomerName: "John Smith",
-            Subject: "Unable to access my account after password reset",
-            Description: "I tried to reset my password yesterday but now I cannot log in. " +
-                         "I've tried multiple times and keep getting an 'invalid credentials' error. " +
-                         "This is urgent as I need to access my billing information.",
-            Priority: TicketPriority.High
-        );
+        // Load a ticket from the data file
+        await TicketLoader.DisplayAvailableTicketsAsync();
+        Console.WriteLine();
+        Console.Write("Enter ticket number (1-5) or press Enter for random: ");
+        var input = Console.ReadLine()?.Trim();
+        
+        SupportTicket sampleTicket;
+        if (string.IsNullOrEmpty(input))
+        {
+            sampleTicket = await TicketLoader.GetRandomTicketAsync();
+            Console.WriteLine($"Randomly selected: {sampleTicket.TicketId}");
+        }
+        else if (int.TryParse(input, out int index))
+        {
+            sampleTicket = await TicketLoader.GetTicketByIndexAsync(index);
+        }
+        else
+        {
+            sampleTicket = await TicketLoader.GetTicketByIdAsync(input) 
+                ?? await TicketLoader.GetRandomTicketAsync();
+        }
+        Console.WriteLine();
 
         Console.WriteLine("Incoming Support Ticket:");
         Console.WriteLine($"   Ticket ID: {sampleTicket.TicketId}");
@@ -104,7 +115,7 @@ public static class SequentialWorkflowDemo
         Console.WriteLine();
 
         // Execute the workflow with the support ticket
-        await using StreamingRun run = await InProcessExecution.StreamAsync(workflow, sampleTicket);
+        await using StreamingRun run = await InProcessExecution.RunStreamingAsync(workflow, sampleTicket);
         await foreach (WorkflowEvent evt in run.WatchStreamAsync())
         {
             switch (evt)
