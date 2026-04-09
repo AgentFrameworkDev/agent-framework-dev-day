@@ -17,31 +17,38 @@ from .support_ticket import SupportTicket, TicketPriority
 
 def _get_tickets_path() -> Path:
     """
-    Get the configured tickets path from TICKETS_PATH environment variable.
+    Get the tickets path. First checks TICKETS_PATH environment variable.
+    If not set, traverses up the directory tree to find the 'assets' folder containing tickets.json.
     
     Returns:
         Path to the tickets JSON file.
         
     Raises:
-        ValueError: If TICKETS_PATH is not configured.
+        ValueError: If tickets.json cannot be found.
     """
     tickets_path = os.environ.get("TICKETS_PATH")
     
-    if not tickets_path:
-        raise ValueError(
-            "TICKETS_PATH is not configured. "
-            "Set 'TICKETS_PATH' in .env or as an environment variable. "
-            'Example: "TICKETS_PATH": "../data/tickets.json"'
-        )
+    if tickets_path:
+        path = Path(tickets_path)
+        # Resolve relative paths from the python folder
+        if not path.is_absolute():
+            python_folder = Path(__file__).parent.parent
+            path = python_folder / path
+        return path.resolve()
     
-    path = Path(tickets_path)
+    # Auto-discover: traverse up from current file to find assets/tickets.json
+    current = Path(__file__).resolve().parent
+    while current != current.parent:
+        candidate = current / "assets" / "tickets.json"
+        if candidate.exists():
+            return candidate
+        current = current.parent
     
-    # Resolve relative paths from the python folder
-    if not path.is_absolute():
-        python_folder = Path(__file__).parent.parent
-        path = python_folder / path
-    
-    return path.resolve()
+    raise ValueError(
+        "Could not find tickets.json. "
+        "Either set 'TICKETS_PATH' as an environment variable, "
+        "or ensure an 'assets' folder containing 'tickets.json' exists in a parent directory."
+    )
 
 
 def _map_priority(priority_str: Optional[str]) -> TicketPriority:

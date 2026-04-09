@@ -16,27 +16,61 @@ Console.WriteLine("=============================================================
 Console.WriteLine();
 
 var configPath = FindConfigPath(AppContext.BaseDirectory);
-Console.WriteLine($"📁 Config path: {configPath}");
-Console.WriteLine($"📄 Config file: {Path.Combine(configPath, "appsettings.Local.json")}");
-Console.WriteLine();
+var configFile = Path.Combine(configPath, "appsettings.Local.json");
 
 // Build configuration from appsettings.Local.json and environment variables
-// The config file is copied to the output directory during build
 var configuration = new ConfigurationBuilder()
     .SetBasePath(configPath)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
     .AddEnvironmentVariables()
     .Build();
 
-// Get Azure OpenAI configuration (environment variables take precedence over appsettings.json)
-var endpoint = configuration["AZURE_OPENAI_ENDPOINT"]
-    ?? configuration["AzureOpenAI:Endpoint"]
-    ?? throw new InvalidOperationException("Azure OpenAI endpoint is not set. Set AZURE_OPENAI_ENDPOINT environment variable or AzureOpenAI:Endpoint in appsettings.json.");
+// Validate and display loaded configuration values
+Console.WriteLine($"📁 Config path: {configPath}");
+Console.WriteLine($"📄 Config file: {configFile}");
+Console.WriteLine($"   File exists: {(File.Exists(configFile) ? "✅ Yes" : "❌ No")}");
+Console.WriteLine();
 
-var deploymentName = configuration["AZURE_OPENAI_DEPLOYMENT_NAME"]
+var cfgEndpoint = configuration["AZURE_OPENAI_ENDPOINT"];
+var cfgDeployment = configuration["AZURE_OPENAI_DEPLOYMENT_NAME"]
     ?? configuration["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
-    ?? configuration["AzureOpenAI:DeploymentName"]
     ?? "gpt-4o-mini";
+var cfgApiKey = configuration["AZURE_OPENAI_API_KEY"];
+var cfgTenantId = configuration["AZURE_TENANT_ID"];
+var cfgClientId = configuration["AZURE_CLIENT_ID"];
+var cfgClientSecret = configuration["AZURE_CLIENT_SECRET"];
+
+static string MaskValue(string? val) =>
+    string.IsNullOrEmpty(val) ? "" : (val.Length > 8 ? $"{val[..4]}****{val[^4..]}" : "****");
+
+Console.WriteLine("Configuration Values:");
+Console.WriteLine($"  AZURE_OPENAI_ENDPOINT:         {(string.IsNullOrEmpty(cfgEndpoint) ? "❌ NOT SET" : $"✅ {cfgEndpoint}")}");
+Console.WriteLine($"  AZURE_OPENAI_DEPLOYMENT_NAME:  ✅ {cfgDeployment}");
+Console.WriteLine($"  AZURE_OPENAI_API_KEY:          {(string.IsNullOrEmpty(cfgApiKey) ? "⚠️  not set" : $"✅ {MaskValue(cfgApiKey)}")}");
+Console.WriteLine($"  AZURE_TENANT_ID:               {(string.IsNullOrEmpty(cfgTenantId) ? "⚠️  not set" : $"✅ {cfgTenantId}")}");
+Console.WriteLine($"  AZURE_CLIENT_ID:               {(string.IsNullOrEmpty(cfgClientId) ? "⚠️  not set" : $"✅ {cfgClientId}")}");
+Console.WriteLine($"  AZURE_CLIENT_SECRET:           {(string.IsNullOrEmpty(cfgClientSecret) ? "⚠️  not set" : "✅ ********")}");
+Console.WriteLine();
+
+if (string.IsNullOrEmpty(cfgEndpoint))
+{
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine($"ERROR: AZURE_OPENAI_ENDPOINT is required. Set it in: {configFile}");
+    Console.ResetColor();
+    return;
+}
+
+if (string.IsNullOrEmpty(cfgApiKey) && (string.IsNullOrEmpty(cfgTenantId) || string.IsNullOrEmpty(cfgClientId) || string.IsNullOrEmpty(cfgClientSecret)))
+{
+    Console.ForegroundColor = ConsoleColor.Yellow;
+    Console.WriteLine("WARNING: No API Key or Service Principal configured. Will fall back to DefaultAzureCredential.");
+    Console.ResetColor();
+}
+Console.WriteLine();
+
+// Get Azure OpenAI configuration
+var endpoint = cfgEndpoint!;
+var deploymentName = cfgDeployment;
 
 // Create Azure OpenAI client with appropriate authentication
 var azureOpenAIClient = CreateAzureOpenAIClient(configuration, endpoint);
@@ -111,13 +145,13 @@ Console.WriteLine("Goodbye!");
 // Configuration priority: Environment variables > appsettings.json
 static AzureOpenAIClient CreateAzureOpenAIClient(IConfiguration configuration, string endpoint)
 {
-    // Get values from environment variables first, then fall back to appsettings.json
-    var apiKey = configuration["AZURE_OPENAI_API_KEY"] ?? configuration["AzureOpenAI:ApiKey"];
-    var tenantId = configuration["AZURE_TENANT_ID"] ?? configuration["AzureOpenAI:TenantId"];
-    var clientId = configuration["AZURE_CLIENT_ID"] ?? configuration["AzureOpenAI:ClientId"];
-    var clientSecret = configuration["AZURE_CLIENT_SECRET"] ?? configuration["AzureOpenAI:ClientSecret"];
-    var useManagedIdentity = configuration["AZURE_USE_MANAGED_IDENTITY"] ?? configuration["AzureOpenAI:UseManagedIdentity"];
-    var managedIdentityClientId = configuration["AZURE_MANAGED_IDENTITY_CLIENT_ID"] ?? configuration["AzureOpenAI:ManagedIdentityClientId"];
+    // Get values from configuration (flat keys)
+    var apiKey = configuration["AZURE_OPENAI_API_KEY"];
+    var tenantId = configuration["AZURE_TENANT_ID"];
+    var clientId = configuration["AZURE_CLIENT_ID"];
+    var clientSecret = configuration["AZURE_CLIENT_SECRET"];
+    var useManagedIdentity = configuration["AZURE_USE_MANAGED_IDENTITY"];
+    var managedIdentityClientId = configuration["AZURE_MANAGED_IDENTITY_CLIENT_ID"];
 
     // Option 1: API Key authentication
     if (!string.IsNullOrWhiteSpace(apiKey))

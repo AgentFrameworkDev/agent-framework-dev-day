@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // In-memory store for customer support tickets (Local MCP)
-// Loads tickets from shared data/tickets.json file
+// Loads tickets from shared assets/tickets.json file
 
 using System.Text.Json;
 using McpLocal.Models;
@@ -9,7 +9,7 @@ namespace McpLocal.Services;
 
 /// <summary>
 /// In-memory store for customer support tickets.
-/// Loads initial data from shared data/tickets.json file.
+/// Loads initial data from shared assets/tickets.json file.
 /// </summary>
 public class TicketStore
 {
@@ -23,7 +23,7 @@ public class TicketStore
 
     private void LoadTicketsFromFile()
     {
-        // Find the data folder (root/data/tickets.json)
+        // Find the assets folder (assets/tickets.json)
         var baseDir = AppContext.BaseDirectory;
         var dataFile = FindDataFile(baseDir);
         
@@ -63,26 +63,18 @@ public class TicketStore
             }
         }
         
-        Console.Error.WriteLine("Warning: Could not load tickets from data/tickets.json, using empty store");
+        Console.Error.WriteLine("Warning: Could not load tickets from assets/tickets.json, using empty store");
     }
 
     private static string? FindDataFile(string startPath)
     {
-        // Try to find data/tickets.json by traversing up directories
+        // Try to find assets/tickets.json by traversing up directories
         var current = new DirectoryInfo(startPath);
         while (current != null)
         {
-            var dataFile = Path.Combine(current.FullName, "data", "tickets.json");
+            var dataFile = Path.Combine(current.FullName, "assets", "tickets.json");
             if (File.Exists(dataFile))
                 return dataFile;
-            
-            // Also check if we're in dotnet folder and need to go up one more level
-            if (current.Name.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
-            {
-                var rootDataFile = Path.Combine(current.Parent?.FullName ?? "", "data", "tickets.json");
-                if (File.Exists(rootDataFile))
-                    return rootDataFile;
-            }
             
             current = current.Parent;
         }

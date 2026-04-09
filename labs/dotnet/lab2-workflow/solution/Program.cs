@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using WorkflowLab.Sequential;
 using WorkflowLab.Concurrent;
 using WorkflowLab.HumanInTheLoop;
@@ -19,11 +20,15 @@ using WorkflowLab.HumanInTheLoop;
 /// All demos use a Customer Support Ticket System as the example scenario.
 /// </summary>
 
-// Display config path at startup
+// Load and validate configuration at startup
 var configPath = FindConfigPath(AppContext.BaseDirectory);
-Console.WriteLine($"📁 Config path: {configPath}");
-Console.WriteLine($"📄 Config file: {Path.Combine(configPath, "appsettings.Local.json")}");
-Console.WriteLine();
+var configFile = Path.Combine(configPath, "appsettings.Local.json");
+
+var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+    .SetBasePath(configPath)
+    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables()
+    .Build();
 
 Console.WriteLine("=====================================================================");
 Console.WriteLine("                        WORKFLOW LAB                                 ");
@@ -33,13 +38,48 @@ Console.WriteLine();
 Console.WriteLine("This lab demonstrates three workflow patterns using a");
 Console.WriteLine("Customer Support Ticket System as the example scenario.");
 Console.WriteLine();
-Console.WriteLine("Environment Variables Required:");
-Console.WriteLine("  - AZURE_OPENAI_ENDPOINT (required)");
-Console.WriteLine("  - AZURE_OPENAI_DEPLOYMENT_NAME (optional, default: gpt-4o-mini)");
-Console.WriteLine("  - Authentication (one of the following):");
-Console.WriteLine("    - AZURE_OPENAI_API_KEY (API Key auth)");
-Console.WriteLine("    - AZURE_TENANT_ID + AZURE_CLIENT_ID + AZURE_CLIENT_SECRET (Service Principal)");
-Console.WriteLine("    - None (uses DefaultAzureCredential/Managed Identity)");
+
+// Validate and display loaded configuration values
+Console.WriteLine($"📁 Config path: {configPath}");
+Console.WriteLine($"📄 Config file: {configFile}");
+Console.WriteLine($"   File exists: {(File.Exists(configFile) ? "✅ Yes" : "❌ No")}");
+Console.WriteLine();
+
+var cfgEndpoint = configuration["AZURE_OPENAI_ENDPOINT"];
+var cfgDeployment = configuration["AZURE_OPENAI_DEPLOYMENT_NAME"]
+    ?? configuration["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
+    ?? "gpt-4o-mini";
+var cfgApiKey = configuration["AZURE_OPENAI_API_KEY"];
+var cfgTenantId = configuration["AZURE_TENANT_ID"];
+var cfgClientId = configuration["AZURE_CLIENT_ID"];
+var cfgClientSecret = configuration["AZURE_CLIENT_SECRET"];
+
+static string Mask(string? val) =>
+    string.IsNullOrEmpty(val) ? "" : (val.Length > 8 ? $"{val[..4]}****{val[^4..]}" : "****");
+
+Console.WriteLine("Configuration Values:");
+Console.WriteLine($"  AZURE_OPENAI_ENDPOINT:         {(string.IsNullOrEmpty(cfgEndpoint) ? "❌ NOT SET" : $"✅ {cfgEndpoint}")}");
+Console.WriteLine($"  AZURE_OPENAI_DEPLOYMENT_NAME:  ✅ {cfgDeployment}");
+Console.WriteLine($"  AZURE_OPENAI_API_KEY:          {(string.IsNullOrEmpty(cfgApiKey) ? "⚠️  not set" : $"✅ {Mask(cfgApiKey)}")}");
+Console.WriteLine($"  AZURE_TENANT_ID:               {(string.IsNullOrEmpty(cfgTenantId) ? "⚠️  not set" : $"✅ {cfgTenantId}")}");
+Console.WriteLine($"  AZURE_CLIENT_ID:               {(string.IsNullOrEmpty(cfgClientId) ? "⚠️  not set" : $"✅ {cfgClientId}")}");
+Console.WriteLine($"  AZURE_CLIENT_SECRET:           {(string.IsNullOrEmpty(cfgClientSecret) ? "⚠️  not set" : "✅ ********")}");
+Console.WriteLine();
+
+if (string.IsNullOrEmpty(cfgEndpoint))
+{
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine($"ERROR: AZURE_OPENAI_ENDPOINT is required. Set it in: {configFile}");
+    Console.ResetColor();
+    return;
+}
+
+if (string.IsNullOrEmpty(cfgApiKey) && (string.IsNullOrEmpty(cfgTenantId) || string.IsNullOrEmpty(cfgClientId) || string.IsNullOrEmpty(cfgClientSecret)))
+{
+    Console.ForegroundColor = ConsoleColor.Yellow;
+    Console.WriteLine("WARNING: No API Key or Service Principal configured. Will fall back to DefaultAzureCredential.");
+    Console.ResetColor();
+}
 Console.WriteLine();
 Console.WriteLine("=====================================================================");
 Console.WriteLine();

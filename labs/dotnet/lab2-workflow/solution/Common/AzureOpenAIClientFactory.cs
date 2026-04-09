@@ -58,7 +58,7 @@ public static class AzureOpenAIClientFactory
 
     /// <summary>
     /// Creates an Azure OpenAI chat client with support for multiple authentication methods:
-    /// 1. API Key authentication (AzureOpenAI:ApiKey or AZURE_OPENAI_API_KEY)
+    /// 1. API Key authentication (AZURE_OPENAI_API_KEY)
     /// 2. Service Principal authentication (TenantId, ClientId, ClientSecret)
     /// 3. Managed Identity / DefaultAzureCredential (fallback)
     /// 
@@ -76,16 +76,14 @@ public static class AzureOpenAIClientFactory
         Console.WriteLine();
 
         // Get endpoint (required)
-        var endpoint = GetConfigValue("AzureOpenAI:Endpoint", "AZURE_OPENAI_ENDPOINT")
+        var endpoint = GetConfigValue("AZURE_OPENAI_ENDPOINT")
             ?? throw new InvalidOperationException(
                 "Azure OpenAI endpoint is not configured. " +
-                "Set 'AzureOpenAI:Endpoint' in appsettings.json or 'AZURE_OPENAI_ENDPOINT' environment variable.");
+                "Set 'AZURE_OPENAI_ENDPOINT' in appsettings.Local.json or as an environment variable.");
 
         // Get deployment name (optional, default: gpt-4o-mini)
-        // Check in order: AZURE_OPENAI_DEPLOYMENT_NAME, AZURE_AI_MODEL_DEPLOYMENT_NAME, AzureOpenAI:DeploymentName
-        var deploymentName = Configuration["AZURE_OPENAI_DEPLOYMENT_NAME"] 
-            ?? Configuration["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
-            ?? Configuration["AzureOpenAI:DeploymentName"]
+        var deploymentName = GetConfigValue("AZURE_OPENAI_DEPLOYMENT_NAME") 
+            ?? GetConfigValue("AZURE_AI_MODEL_DEPLOYMENT_NAME")
             ?? "gpt-4o-mini";
 
         Console.WriteLine($"✅ Configuration loaded");
@@ -94,7 +92,7 @@ public static class AzureOpenAIClientFactory
         Console.WriteLine();
 
         // Option 1: API Key authentication
-        var apiKey = GetConfigValue("AzureOpenAI:ApiKey", "AZURE_OPENAI_API_KEY");
+        var apiKey = GetConfigValue("AZURE_OPENAI_API_KEY");
         if (!string.IsNullOrEmpty(apiKey))
         {
             Console.WriteLine("Using API Key authentication");
@@ -104,9 +102,9 @@ public static class AzureOpenAIClientFactory
         }
 
         // Option 2: Service Principal authentication (Tenant ID, Client ID, Client Secret)
-        var tenantId = GetConfigValue("AzureOpenAI:TenantId", "AZURE_TENANT_ID");
-        var clientId = GetConfigValue("AzureOpenAI:ClientId", "AZURE_CLIENT_ID");
-        var clientSecret = GetConfigValue("AzureOpenAI:ClientSecret", "AZURE_CLIENT_SECRET");
+        var tenantId = GetConfigValue("AZURE_TENANT_ID");
+        var clientId = GetConfigValue("AZURE_CLIENT_ID");
+        var clientSecret = GetConfigValue("AZURE_CLIENT_SECRET");
 
         if (!string.IsNullOrEmpty(tenantId) && !string.IsNullOrEmpty(clientId) && !string.IsNullOrEmpty(clientSecret))
         {
@@ -125,26 +123,19 @@ public static class AzureOpenAIClientFactory
     }
 
     /// <summary>
-    /// Gets a configuration value, checking environment variable first, then config keys.
+    /// Gets a configuration value, checking environment variable first, then config file.
     /// Environment variables take precedence if both are set.
     /// </summary>
-    private static string? GetConfigValue(string appSettingsKey, string environmentVariable)
+    private static string? GetConfigValue(string key)
     {
         // Check environment variable first (highest precedence)
-        var envValue = Environment.GetEnvironmentVariable(environmentVariable);
+        var envValue = Environment.GetEnvironmentVariable(key);
         if (!string.IsNullOrEmpty(envValue))
         {
             return envValue;
         }
 
-        // Check config file with environment variable key (e.g., AZURE_OPENAI_ENDPOINT)
-        var configEnvValue = Configuration[environmentVariable];
-        if (!string.IsNullOrEmpty(configEnvValue))
-        {
-            return configEnvValue;
-        }
-
-        // Fall back to nested config key (e.g., AzureOpenAI:Endpoint)
-        return Configuration[appSettingsKey];
+        // Check config file
+        return Configuration[key];
     }
 }

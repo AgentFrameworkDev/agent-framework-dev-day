@@ -12,17 +12,18 @@ from mcp.types import Tool, TextContent
 
 
 def load_tickets() -> dict[str, dict]:
-    """Load tickets from shared data/tickets.json file."""
-    # Find the data folder (mcp/data/tickets.json - up 2 levels from python folder)
-    data_file = Path(__file__).parent.parent.parent / "data" / "tickets.json"
-    print(f"Looking for tickets at: {data_file}", file=__import__('sys').stderr)
-    if data_file.exists():
-        with open(data_file, "r") as f:
-            ticket_list = json.load(f)
-            print(f"Loaded {len(ticket_list)} tickets", file=__import__('sys').stderr)
-            return {t["id"]: t for t in ticket_list}
-    print(f"Warning: {data_file} not found", file=__import__('sys').stderr)
-    # Fallback to empty dict if file not found
+    """Load tickets by traversing up directories to find assets/tickets.json."""
+    current = Path(__file__).resolve().parent
+    while current != current.parent:
+        data_file = current / "assets" / "tickets.json"
+        if data_file.exists():
+            print(f"Found tickets at: {data_file}", file=__import__('sys').stderr)
+            with open(data_file, "r") as f:
+                ticket_list = json.load(f)
+                print(f"Loaded {len(ticket_list)} tickets", file=__import__('sys').stderr)
+                return {t["id"]: t for t in ticket_list}
+        current = current.parent
+    print("Warning: assets/tickets.json not found", file=__import__('sys').stderr)
     return {}
 
 

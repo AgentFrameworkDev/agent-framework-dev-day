@@ -58,27 +58,40 @@ public static class TicketLoader
     }
 
     /// <summary>
-    /// Gets the configured tickets path from TICKETS_PATH in appsettings.Local.json.
+    /// Gets the tickets path. First checks TICKETS_PATH config/env var.
+    /// If not set, traverses up the directory tree to find the 'assets' folder containing tickets.json.
     /// </summary>
     private static string GetTicketsPath()
     {
         var ticketsPath = Configuration["TICKETS_PATH"];
         
-        if (string.IsNullOrWhiteSpace(ticketsPath))
+        if (!string.IsNullOrWhiteSpace(ticketsPath))
         {
-            throw new InvalidOperationException(
-                "TICKETS_PATH is not configured. " +
-                "Set 'TICKETS_PATH' in appsettings.Local.json or as an environment variable. " +
-                "Example: \"TICKETS_PATH\": \"..\\\\data\\\\tickets.json\"");
+            // Resolve relative paths from the config directory
+            if (!Path.IsPathRooted(ticketsPath))
+            {
+                ticketsPath = Path.Combine(_configPath ?? AppContext.BaseDirectory, ticketsPath);
+            }
+            return Path.GetFullPath(ticketsPath);
         }
 
-        // Resolve relative paths from the config directory
-        if (!Path.IsPathRooted(ticketsPath))
+        // Auto-discover: traverse up from config path to find assets/tickets.json
+        var searchStart = _configPath ?? AppContext.BaseDirectory;
+        var current = new DirectoryInfo(searchStart);
+        while (current != null)
         {
-            ticketsPath = Path.Combine(_configPath ?? AppContext.BaseDirectory, ticketsPath);
+            var candidate = Path.Combine(current.FullName, "assets", "tickets.json");
+            if (File.Exists(candidate))
+            {
+                return Path.GetFullPath(candidate);
+            }
+            current = current.Parent;
         }
 
-        return Path.GetFullPath(ticketsPath);
+        throw new InvalidOperationException(
+            "Could not find tickets.json. " +
+            "Either set 'TICKETS_PATH' in appsettings.Local.json or as an environment variable, " +
+            "or ensure an 'assets' folder containing 'tickets.json' exists in a parent directory.");
     }
 
     /// <summary>

@@ -22,10 +22,21 @@ import json
 from pathlib import Path
 
 
+def _find_python_folder() -> Path:
+    """Traverse up from the current file to find the 'python' folder."""
+    current = Path(__file__).resolve().parent
+    while current != current.parent:
+        if current.name.lower() == "python":
+            return current
+        current = current.parent
+    # Fallback to script's directory
+    return Path(__file__).resolve().parent
+
+
 def load_env_from_root():
     """Load environment variables from .env file in the python folder."""
-    current_dir = Path(__file__).resolve().parent
-    env_file = current_dir / ".env"
+    python_dir = _find_python_folder()
+    env_file = python_dir / ".env"
     
     if env_file.exists():
         print(f"Loading configuration from: {env_file}")
@@ -67,7 +78,7 @@ from human_in_the_loop import HumanInTheLoopWorkflowDemo
 
 
 def print_header():
-    """Print the application header."""
+    """Print the application header and validate configuration."""
     print("=====================================================================")
     print("                        WORKFLOW LAB                                 ")
     print("              Python AI Workflow Patterns                            ")
@@ -76,13 +87,37 @@ def print_header():
     print("This lab demonstrates three workflow patterns using a")
     print("Customer Support Ticket System as the example scenario.")
     print()
-    print("Environment Variables Required:")
-    print("  - AZURE_OPENAI_ENDPOINT (required)")
-    print("  - AZURE_OPENAI_DEPLOYMENT_NAME (optional, default: gpt-4o-mini)")
-    print("  - Authentication (one of the following):")
-    print("    - AZURE_OPENAI_API_KEY (API Key auth)")
-    print("    - AZURE_TENANT_ID + AZURE_CLIENT_ID + AZURE_CLIENT_SECRET (Service Principal)")
-    print("    - None (uses DefaultAzureCredential/Managed Identity)")
+
+    # Validate and display configuration
+    endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
+    deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or \
+                 os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME") or "gpt-4o-mini"
+    api_key = os.environ.get("AZURE_OPENAI_API_KEY", "")
+    tenant_id = os.environ.get("AZURE_TENANT_ID", "")
+    client_id = os.environ.get("AZURE_CLIENT_ID", "")
+    client_secret = os.environ.get("AZURE_CLIENT_SECRET", "")
+
+    def mask(val):
+        if not val:
+            return None
+        return val[:4] + "****" + val[-4:] if len(val) > 8 else "****"
+
+    print("Configuration (from .env):")
+    print(f"  AZURE_OPENAI_ENDPOINT:         {'❌ NOT SET' if not endpoint else f'✅ {endpoint}'}")
+    print(f"  AZURE_OPENAI_DEPLOYMENT_NAME:  ✅ {deployment}")
+    print(f"  AZURE_OPENAI_API_KEY:          {'⚠️  not set' if not api_key else f'✅ {mask(api_key)}'}")
+    print(f"  AZURE_TENANT_ID:               {'⚠️  not set' if not tenant_id else f'✅ {tenant_id}'}")
+    print(f"  AZURE_CLIENT_ID:               {'⚠️  not set' if not client_id else f'✅ {client_id}'}")
+    print(f"  AZURE_CLIENT_SECRET:           {'⚠️  not set' if not client_secret else '✅ ********'}")
+    print()
+
+    if not endpoint:
+        print("ERROR: AZURE_OPENAI_ENDPOINT is required but not configured.")
+        print("Please set it in the .env file under the python folder.")
+        sys.exit(1)
+
+    if not api_key and not (tenant_id and client_id and client_secret):
+        print("WARNING: No API Key or Service Principal configured. Will fall back to DefaultAzureCredential.")
     print()
     print("=====================================================================")
     print()

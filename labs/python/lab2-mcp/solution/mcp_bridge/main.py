@@ -17,8 +17,16 @@ import uvicorn
 # Context variable to pass Authorization header to tool calls
 current_auth_header: ContextVar[str | None] = ContextVar('current_auth_header', default=None)
 
-# Load .env file
-env_path = Path(__file__).parent.parent.parent.parent / '.env'
+# Load .env file by traversing up to find the 'python' folder
+def _find_python_folder() -> Path:
+    current = Path(__file__).resolve().parent
+    while current != current.parent:
+        if current.name.lower() == "python":
+            return current
+        current = current.parent
+    return Path(__file__).resolve().parent
+
+env_path = _find_python_folder() / '.env'
 load_dotenv(env_path)
 
 # REST API base URL
