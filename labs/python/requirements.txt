@@ -1,6 +1,8 @@
 agent-framework-azure-ai
 agent-framework-foundry
 agent-framework-core
+agent-framework-azure-ai-search --pre
+agent-framework-orchestrations
 python-dotenv
 azure-identity
 azure-ai-projects
