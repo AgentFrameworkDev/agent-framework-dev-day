@@ -1,13 +1,3 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Workflow Lab - Azure OpenAI Client Factory
-
-// ============================================================================
-// EXERCISE 1: Configure Azure OpenAI Client
-// ============================================================================
-// This file creates the Azure OpenAI client with multiple authentication options.
-// Complete the TODO sections to enable AI functionality.
-// ============================================================================
-
 using Azure;
 using Azure.AI.OpenAI;
 using Azure.Identity;
@@ -67,7 +57,13 @@ public static class AzureOpenAIClientFactory
     }
 
     /// <summary>
-    /// Creates an Azure OpenAI chat client with support for multiple authentication methods.
+    /// Creates an Azure OpenAI chat client with support for multiple authentication methods:
+    /// 1. API Key authentication (AZURE_OPENAI_API_KEY)
+    /// 2. Service Principal authentication (TenantId, ClientId, ClientSecret)
+    /// 3. Managed Identity / DefaultAzureCredential (fallback)
+    /// 
+    /// Configuration can come from appsettings.json or environment variables.
+    /// Environment variables take precedence over appsettings.json.
     /// </summary>
     public static IChatClient CreateChatClient()
     {
@@ -79,43 +75,37 @@ public static class AzureOpenAIClientFactory
         Console.WriteLine($"📄 Config file: {Path.Combine(_configPath ?? "", "appsettings.Local.json")}");
         Console.WriteLine();
 
-        // ============================================================================
-        // STEP 1.1: Get endpoint from configuration
-        // Uncomment the lines below to read the endpoint
-        // ============================================================================
-        // var endpoint = GetConfigValue("AzureOpenAI:Endpoint", "AZURE_OPENAI_ENDPOINT")
+        // ========================================================================
+        // STEP 1: Create Azure OpenAI IChatClient with authentication
+        // ========================================================================
+        // TODO: Create and return an IChatClient connected to Azure OpenAI
+        //
+        // Hints:
+        // - Get endpoint from GetConfigValue("AZURE_OPENAI_ENDPOINT") (required, throw if null)
+        // - Get deployment from GetConfigValue("AZURE_OPENAI_DEPLOYMENT_NAME") ?? "gpt-4o-mini"
+        // - Try API Key auth first: GetConfigValue("AZURE_OPENAI_API_KEY")
+        //   If set, use new AzureOpenAIClient(new Uri(endpoint), new AzureKeyCredential(apiKey))
+        // - Try Service Principal next: TenantId, ClientId, ClientSecret
+        //   If all set, use new ClientSecretCredential(tenantId, clientId, clientSecret)
+        // - Fallback to DefaultAzureCredential
+        // - Convert to IChatClient: .GetChatClient(deploymentName).AsIChatClient()
+        //
+        // var endpoint = GetConfigValue("AZURE_OPENAI_ENDPOINT")
         //     ?? throw new InvalidOperationException(
         //         "Azure OpenAI endpoint is not configured. " +
-        //         "Set 'AzureOpenAI:Endpoint' in appsettings.json or 'AZURE_OPENAI_ENDPOINT' environment variable.");
-
-        // Placeholder - REMOVE after uncommenting above
-        var endpoint = "https://YOUR-RESOURCE.openai.azure.com/";
-
-        // ============================================================================
-        // STEP 1.2: Get deployment name from configuration
-        // Uncomment the lines below
-        // ============================================================================
-        // var deploymentName = Configuration["AZURE_OPENAI_DEPLOYMENT_NAME"] 
-        //     ?? Configuration["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
-        //     ?? Configuration["AzureOpenAI:DeploymentName"]
+        //         "Set 'AZURE_OPENAI_ENDPOINT' in appsettings.Local.json or as an environment variable.");
+        //
+        // var deploymentName = GetConfigValue("AZURE_OPENAI_DEPLOYMENT_NAME") 
+        //     ?? GetConfigValue("AZURE_AI_MODEL_DEPLOYMENT_NAME")
         //     ?? "gpt-4o-mini";
-
-        // Placeholder - REMOVE after uncommenting above
-        var deploymentName = "gpt-4o-mini";
-
-        // Display loaded values (uncomment after completing Step 1.1 and 1.2)
+        //
         // Console.WriteLine($"✅ Configuration loaded");
         // Console.WriteLine($"   Endpoint: {endpoint}");
         // Console.WriteLine($"   Deployment: {deploymentName}");
         // Console.WriteLine();
-
-        // ============================================================================
-        // STEP 1.3: Create the client with authentication
-        // Uncomment the appropriate authentication block below
-        // ============================================================================
-
-        // Option 1: API Key authentication
-        // var apiKey = GetConfigValue("AzureOpenAI:ApiKey", "AZURE_OPENAI_API_KEY");
+        //
+        // // Option 1: API Key authentication
+        // var apiKey = GetConfigValue("AZURE_OPENAI_API_KEY");
         // if (!string.IsNullOrEmpty(apiKey))
         // {
         //     Console.WriteLine("Using API Key authentication");
@@ -123,11 +113,12 @@ public static class AzureOpenAIClientFactory
         //         .GetChatClient(deploymentName)
         //         .AsIChatClient();
         // }
-
-        // Option 2: Service Principal authentication
-        // var tenantId = GetConfigValue("AzureOpenAI:TenantId", "AZURE_TENANT_ID");
-        // var clientId = GetConfigValue("AzureOpenAI:ClientId", "AZURE_CLIENT_ID");
-        // var clientSecret = GetConfigValue("AzureOpenAI:ClientSecret", "AZURE_CLIENT_SECRET");
+        //
+        // // Option 2: Service Principal authentication
+        // var tenantId = GetConfigValue("AZURE_TENANT_ID");
+        // var clientId = GetConfigValue("AZURE_CLIENT_ID");
+        // var clientSecret = GetConfigValue("AZURE_CLIENT_SECRET");
+        //
         // if (!string.IsNullOrEmpty(tenantId) && !string.IsNullOrEmpty(clientId) && !string.IsNullOrEmpty(clientSecret))
         // {
         //     Console.WriteLine("Using Service Principal authentication");
@@ -136,38 +127,30 @@ public static class AzureOpenAIClientFactory
         //         .GetChatClient(deploymentName)
         //         .AsIChatClient();
         // }
-
-        // Option 3: Managed Identity / DefaultAzureCredential (fallback)
+        //
+        // // Option 3: DefaultAzureCredential (fallback)
         // Console.WriteLine("Using Managed Identity / DefaultAzureCredential authentication");
         // return new AzureOpenAIClient(new Uri(endpoint), new DefaultAzureCredential())
         //     .GetChatClient(deploymentName)
         //     .AsIChatClient();
-
-        // Placeholder - REMOVE after uncommenting above
-        throw new NotImplementedException("Exercise 1 not completed. Please uncomment the authentication code above.");
+        // ========================================================================
+        throw new NotImplementedException("STEP 1: Create Azure OpenAI IChatClient with authentication");
     }
 
     /// <summary>
-    /// Gets a configuration value, checking environment variable first, then config keys.
+    /// Gets a configuration value, checking environment variable first, then config file.
     /// Environment variables take precedence if both are set.
     /// </summary>
-    private static string? GetConfigValue(string appSettingsKey, string environmentVariable)
+    private static string? GetConfigValue(string key)
     {
         // Check environment variable first (highest precedence)
-        var envValue = Environment.GetEnvironmentVariable(environmentVariable);
+        var envValue = Environment.GetEnvironmentVariable(key);
         if (!string.IsNullOrEmpty(envValue))
         {
             return envValue;
         }
 
-        // Check config file with environment variable key (e.g., AZURE_OPENAI_ENDPOINT)
-        var configEnvValue = Configuration[environmentVariable];
-        if (!string.IsNullOrEmpty(configEnvValue))
-        {
-            return configEnvValue;
-        }
-
-        // Fall back to nested config key (e.g., AzureOpenAI:Endpoint)
-        return Configuration[appSettingsKey];
+        // Check config file
+        return Configuration[key];
     }
 }

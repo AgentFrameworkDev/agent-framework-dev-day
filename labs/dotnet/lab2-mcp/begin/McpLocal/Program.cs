@@ -1,16 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // MCP Workshop - Local MCP Server (.NET EXE with STDIO transport)
 // This demonstrates a local MCP server that runs as a subprocess
-
-// ============================================================================
-// EXERCISE 2: Create the MCP Server Host
-// ============================================================================
-// In this exercise, you will set up a .NET host application that runs an MCP
-// server using STDIO transport. The server will expose tools for configuration
-// and ticket management.
-//
-// TODO: Uncomment the code below step by step as instructed in EXERCISES.md
-// ============================================================================
+// Same tools as McpBridge for consistency
 
 using McpLocal.Services;
 using McpLocal.Tools;
@@ -19,51 +10,41 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 Console.Error.WriteLine("Starting Local MCP Server (STDIO)...");
-Console.Error.WriteLine("MCP Tools exposed:");
-Console.Error.WriteLine("   - GetConfig / UpdateConfig (Configuration)");
-Console.Error.WriteLine("   - GetTicket / UpdateTicket (Support Tickets)");
+Console.Error.WriteLine("MCP Tools exposed (same as McpBridge):");
+Console.Error.WriteLine("   - GetAllTickets (Support Tickets)");
+Console.Error.WriteLine("   - GetTicket     (Support Tickets)");
+Console.Error.WriteLine("   - UpdateTicket  (Support Tickets)");
 
-// ============================================================================
-// STEP 2.1: Create the host builder
-// Uncomment the line below to create an empty application builder
-// ============================================================================
+// ========================================================================
+// STEP 2: Create the host with MCP server configured for STDIO transport
+// ========================================================================
+// TODO: Build a .NET host with MCP server using STDIO transport
+//
+// Hints:
+// - Use Host.CreateEmptyApplicationBuilder(settings: null)
+// - Configure logging: builder.Logging.AddConsole(...) with LogToStandardErrorThreshold
+// - Register TicketStore as singleton: builder.Services.AddSingleton<TicketStore>()
+// - Register MCP Server: builder.Services.AddMcpServer().WithStdioServerTransport().WithToolsFromAssembly()
+// - Build and run: await builder.Build().RunAsync()
+//
 // HostApplicationBuilder builder = Host.CreateEmptyApplicationBuilder(settings: null);
-
-// ============================================================================
-// STEP 2.2: Configure logging to stderr
-// MCP uses stdout for JSON-RPC protocol, so we log to stderr
-// Uncomment the lines below to configure logging
-// ============================================================================
+//
+// // Configure logging to stderr (MCP uses stdout for JSON-RPC protocol)
 // builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
 // builder.Logging.SetMinimumLevel(LogLevel.Information);
-
-// ============================================================================
-// STEP 2.3: Register the in-memory stores
-// These stores hold our configuration and ticket data
-// Uncomment the lines below to register services
-// ============================================================================
-// builder.Services.AddSingleton<ConfigurationStore>();
+//
+// // Register the in-memory store
 // builder.Services.AddSingleton<TicketStore>();
-
-// ============================================================================
-// STEP 2.4: Register MCP Server with STDIO transport
-// This is the key part - configuring MCP server with tools discovery
-// Uncomment the lines below to register MCP server
-// ============================================================================
+//
+// // Register MCP Server with STDIO transport and discover tools from assembly
 // builder.Services
 //     .AddMcpServer()
 //     .WithStdioServerTransport()
 //     .WithToolsFromAssembly();
-
-Console.Error.WriteLine("MCP Server initialized with STDIO transport");
-Console.Error.WriteLine("Available tools: GetConfig, UpdateConfig, GetTicket, UpdateTicket");
-
-// ============================================================================
-// STEP 2.5: Build and run the host
-// Uncomment the line below to start the MCP server
-// ============================================================================
+//
+// Console.Error.WriteLine("MCP Server initialized with STDIO transport");
+// Console.Error.WriteLine("Available tools: GetAllTickets, GetTicket, UpdateTicket");
+//
 // await builder.Build().RunAsync();
-
-// Placeholder to prevent compile error - REMOVE after uncommenting above
-Console.Error.WriteLine("Exercise not completed. Please uncomment the code above.");
-await Task.Delay(1000);
+// ========================================================================
+throw new NotImplementedException("STEP 2: Create the host with MCP server configured for STDIO transport");
