@@ -113,11 +113,16 @@ a JSON object with "category" and "reasoning" fields.
 
 ## Database Schema
 The database contains IT support tickets with these fields:
-- Id, Subject, Body, Answer
-- Type: "Incident", "Request", "Problem", "Change"
-- Queue: "Human Resources", "IT", "Finance", "Operations", "Sales", "Marketing", "Engineering", "Support"
-- Priority: "high", "medium", "low"
-- Language, Business_Type, Tags
+- Id: unique identifier
+- Subject: ticket subject
+- Body: ticket question/description
+- Answer: ticket response/solution
+- Type: ticket type (values: "Incident", "Request", "Problem", "Change")
+- Queue: department name (values: "Human Resources", "IT", "Finance", "Operations", "Sales", "Marketing", "Engineering", "Support")
+- Priority: priority level (values: "high", "medium", "low")
+- Language: ticket language
+- Business_Type: business category
+- Tags: categorization tags
 
 **IMPORTANT**: When "and" combines field values (Type, Queue, Priority), these are FILTERS for counting/searching, NOT separate items to compare.
 

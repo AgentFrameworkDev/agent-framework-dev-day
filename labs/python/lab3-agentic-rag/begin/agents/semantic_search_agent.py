@@ -3,8 +3,8 @@ Semantic Search agent for answering questions using semantic similarity search.
 """
 import json
 from typing import Annotated
-from agent_framework import ChatAgent, ai_function
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, tool
+from agent_framework.openai import OpenAIChatClient
 
 from services import SearchService
 
@@ -51,7 +51,7 @@ def create_semantic_search_function(search_service: SearchService):
         AI function for semantic searches
     """
     
-    @ai_function
+    @tool
     def semantic_search(
         user_question: Annotated[str, "User question requiring semantic search"]
     ) -> str:
@@ -96,9 +96,9 @@ Base your answer strictly on the evidence from the search results provided.
 
 
 def create_semantic_search_agent(
-    chat_client: AzureOpenAIChatClient,
+    chat_client: OpenAIChatClient,
     search_service: SearchService
-) -> ChatAgent:
+) -> Agent:
     """
     Create the semantic search specialist agent.
     
@@ -116,4 +116,5 @@ def create_semantic_search_agent(
         instructions=SEMANTIC_SEARCH_AGENT_INSTRUCTIONS,
         name="semantic_search_agent",
         tools=[semantic_search_fn],
+        require_per_service_call_history_persistence=True,
     )
