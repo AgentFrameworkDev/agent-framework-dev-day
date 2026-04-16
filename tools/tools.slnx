@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/LabKeyEncrypter/">
+    <Project Path="LabKeyEncrypter/LabKeyEncrypter.ConsoleApp/LabKeyEncrypter.ConsoleApp.csproj" />
+    <Project Path="LabKeyEncrypter/LabKeyEncrypter.Library/LabKeyEncrypter.Library.csproj" />
+    <Project Path="LabKeyEncrypter/LabKeyEncrypter.Tests/LabKeyEncrypter.Tests.csproj" />
+  </Folder>
+  <Project Path="LabKeyEncrypter/labkeyencrypter.csproj" />
+</Solution>

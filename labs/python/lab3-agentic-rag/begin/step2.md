@@ -13,7 +13,8 @@
 Before we can implement an agent to specifically answer the Yes/No question, let's understand it a little more and see some examples.
 
 In the [Mintaka: A Complex, Natural, and Multilingual Dataset for End-to-End Question Answering](https://aclanthology.org/2022.coling-1.138.pdf) whitepaper:
-> YES/NO: questions whwere the answer is Yes or No. For example, Q: Haas Lady Gaga ever made a song with Ariana Grande? A: Yes
+> YES/NO: questions whwere the answer is Yes or No. 
+> For example, Q: Has Lady Gaga ever made a song with Ariana Grande? A: Yes
 
 This question is different than the normal semantic search mainly it the fact that we do want either "yes" or "no" with some optional explaination.
 
@@ -32,12 +33,14 @@ At the top of this file, you can see the prompt that will categorize (ie. classi
 
 2. At the top of the file, you can see there is a brief description of what the agent does and some detail about the search index:
 ```shell
-You are a query classification system for an IT support ticket database. 
-Your task is to route questions to specialist search agents based on the user question.
+You are a query classification system for an IT support ticket database.
+Classify the incoming user question into exactly one category and return
+a JSON object with "category" and "reasoning" fields.
 
 ## Database Schema
 The database contains IT support tickets with these fields:
 - Id: unique identifier
+- Create_Date: date the ticket was created
 - Subject: ticket subject
 - Body: ticket question/description
 - Answer: ticket response/solution
@@ -52,16 +55,10 @@ The database contains IT support tickets with these fields:
 
 ```
 
-3. Go to line 70, to see the specific portion of the prompt for the yes/no questions:
+3. Go to line 147, to see the specific portion of the prompt for the yes/no questions:
 ```shell
-**YES_NO_AGENT**: Simple yes/no questions (expect "yes" or "no" as answer)
-   - Keywords: "is", "are", "can", "does", "do", "will", "should", "any" (WITHOUT negation)
-   - Examples:
-     - "Are there any issues for Dell XPS laptops?"
-     - "Is my account locked?"
-     - "Can I access the VPN?"
-     - "Does the printer support color printing?"
-     - "Do we have problems with Surface devices?"
+**yes_no**: Explicit yes/no questions expecting a boolean answer.
+  - "Are there any issues for Dell XPS laptops?" -> yes_no
 
 ```
 
@@ -81,8 +78,8 @@ The agents have a common layout to make it easier to understand their contents, 
 ```python
 import json
 from typing import Annotated
-from agent_framework import ChatAgent, ai_function
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, tool
+from agent_framework.openai import OpenAIChatClient
 
 from services import SearchService
 ```
@@ -130,7 +127,7 @@ def create_yes_no_search_function(search_service: SearchService):
         AI function for yes/no searches
     """
     
-    @ai_function
+    @tool
     def yes_or_no_search(
         user_question: Annotated[str, "User question to answer with yes or no"]
     ) -> str:
@@ -178,7 +175,6 @@ Base your answer strictly on the evidence from the search results provided.
         return analysis_prompt
     
     return yes_or_no_search
-
 ```
 
 This logic follows these steps:
@@ -191,9 +187,9 @@ Next, you need a method to create an agent that will use the instruction and the
 5. Towards the bottom of the file, paste the following code:
 ```python
 def create_yes_no_agent(
-    chat_client: AzureOpenAIChatClient,
+    chat_client: OpenAIChatClient,
     search_service: SearchService
-) -> ChatAgent:
+) -> Agent:
     """
     Create the yes/no specialist agent.
     
@@ -211,6 +207,7 @@ def create_yes_no_agent(
         instructions=YES_NO_AGENT_INSTRUCTIONS,
         name="yes_no_agent",
         tools=[yes_no_search_fn],
+        require_per_service_call_history_persistence=True,
     )
 
 ```
@@ -245,15 +242,30 @@ from agents import (
         }
 ```
 
-8. Next, open the [main.py](main.py) file and find the two places the workflow is defined and modify it to the following:
+8. Next, open the [main.py](main.py) file and find where the bridges are created and add the yes_no, then add the Case for using it in the WorkflowBuilder below it:
 ```python
-    workflow = (
-        HandoffBuilder(
-            name="agentic_rag_workflow",
-            participants=[agents["classifier"], agents["semantic_search"], agents["yes_no"]],
+    bridges = {
+        name: QueryBridge(id=f"{name}_bridge")
+        for name in [
+            "yes_no", "semantic_search",
+        ]
+    }
+
+    # A second bridge pointing to semantic_search acts as the catch-all default.
+    # Once you add a real Case for another agent, you can remove this.
+    default_bridge = QueryBridge(id="default_bridge")
+
+    builder = (
+        WorkflowBuilder(name="agentic_rag_workflow", start_executor=classifier)
+        .add_edge(classifier, extract_category)
+        .add_switch_case_edge_group(
+            extract_category,
+            [
+                Case(condition=lambda r: isinstance(r, ClassifiedQuery) and r.category == "yes_no",
+                     target=bridges["yes_no"]),
+                Default(target=default_bridge),
+            ],
         )
-        .set_coordinator(agents["classifier"])
-        .build()
     )
 ```
 

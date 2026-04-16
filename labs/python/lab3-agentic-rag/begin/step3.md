@@ -25,17 +25,10 @@ In our dataset some count questions could be:
 
 ## Classifier Prompt to recognize a count question
 
-1. In your VS Code, open the [classifier_agent.py](./agents/classifier_agent.py) file, go to line 71 to find the count related portion.
+1. In your VS Code, open the [classifier_agent.py](./agents/classifier_agent.py) file, go to line 150 to find the count related portion.
 ```shell
-   - When "and" combines database field values (Priority=high, Queue=HR, Type=Incident), these are FILTERS, not intersection
-   - Keywords: "how many", "number of", "count of", "total", "how much"
-   - Examples:
-     - "How many tickets were logged for Human Resources?" ✓ COUNT_AGENT
-     - "How many tickets were logged and Incidents for Human Resources and low priority?" ✓ COUNT_AGENT (Type=Incident AND Queue=HR AND Priority=low - all filters!)
-     - "What is the total number of open tickets?" ✓ COUNT_AGENT
-     - "Count of high priority incidents for IT?" ✓ COUNT_AGENT (Priority=high AND Type=Incident AND Queue=IT - all filters!)Human Resources and low priority?" ✓ COUNT_AGENT (and = filters)
-     - "What is the total number of open tickets?" ✓ COUNT_AGENT
-     - "Count of high priority incidents" ✓ COUNT_AGENT
+   **count**: Counting questions ("how many", "count", "total", "number of").
+  - "How many Incidents for Human Resources and low priority?" -> count (all filters!)
 ```
 
 This prompt has been modified a few times after some testing to get to the current state. When you ask questions that require a count, there is information in that question that can be used to filter the data in order to get to a count. This means the majority of the prompt is a few-shot prompt with examples the LLM can use to infer the question is a count question.
@@ -50,8 +43,8 @@ Now we'll use the pattern we used for the yes_no_agent to implement a count_agen
 ```python
 import json
 from typing import Annotated
-from agent_framework import ChatAgent, ai_function
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, Message, tool
+from agent_framework.openai import OpenAIChatClient
 
 from services import SearchService
 ```
@@ -136,11 +129,10 @@ If no filters are needed, respond with: NO_FILTER
 OData filter:
 """
         # Call LLM to generate filter
-        from agent_framework import ChatMessage
         try:
 
             filter_response = await search_service.chat_client.get_response(
-                messages=filter_prompt
+                [Message(role="user", contents=filter_prompt)]
             )
             odata_filter = filter_response.messages[0].text.strip()
         except Exception as e:
@@ -217,9 +209,9 @@ Next, you need a to creat an agent that will provide the creation of the agent.
 5. At the end of the file, paste the following code:
 ```python
 def create_count_agent(
-    chat_client: AzureOpenAIChatClient,
+    chat_client: OpenAIChatClient,
     search_service: SearchService
-) -> ChatAgent:
+) -> Agent:
     """
     Create the count specialist agent.
     
@@ -237,6 +229,7 @@ def create_count_agent(
         instructions=COUNT_AGENT_INSTRUCTIONS,
         name="count_agent",
         tools=[count_search_fn],
+        require_per_service_call_history_persistence=True,
     )
 
 ```
@@ -270,15 +263,32 @@ from agents import (
             # TODO: Add more agents here as needed
         }
 ```
-8. Next, open the [main.py](main.py) file and find the two places the workflow is defined and modify it to the following:
+8. Next, open the [main.py](main.py) file and find where the bridges are created and add the count, then add the Case for using it in the WorkflowBuilder below it:
 ```python
-    workflow = (
-        HandoffBuilder(
-            name="agentic_rag_workflow",
-            participants=[agents["classifier"], agents["semantic_search"], agents["yes_no"], agents["count"]],
+    bridges = {
+        name: QueryBridge(id=f"{name}_bridge")
+        for name in [
+            "yes_no", "semantic_search", "count",
+        ]
+    }
+
+    # A second bridge pointing to semantic_search acts as the catch-all default.
+    # Once you add a real Case for another agent, you can remove this.
+    default_bridge = QueryBridge(id="default_bridge")
+
+    builder = (
+        WorkflowBuilder(name="agentic_rag_workflow", start_executor=classifier)
+        .add_edge(classifier, extract_category)
+        .add_switch_case_edge_group(
+            extract_category,
+            [
+                Case(condition=lambda r: isinstance(r, ClassifiedQuery) and r.category == "yes_no",
+                     target=bridges["yes_no"]),
+                Case(condition=lambda r: isinstance(r, ClassifiedQuery) and r.category == "count",
+                     target=bridges["count"]),
+                Default(target=default_bridge),
+            ],
         )
-        .set_coordinator(agents["classifier"])
-        .build()
     )
 ```
 
