@@ -2,7 +2,7 @@
 Human-in-the-Loop Workflow Executors
 
 ============================================================================
-EXERCISE 4: Create Human-in-the-Loop Workflow Executors
+EXERCISE 4: Create Human-in-the-Loop Workflow Executors (Steps 4.1-4.3)
 ============================================================================
 These executors handle ticket intake, draft processing, and finalization
 with human review in the middle.
@@ -43,33 +43,33 @@ class Executor:
 #     """
 #     Executor that handles ticket intake and sends to AI agent.
 #     """
-#     
+#
 #     current_ticket: Optional[SupportTicket] = None
-#     
+#
 #     def __init__(self):
 #         super().__init__("TicketIntake")
-#     
+#
 #     async def handle(self, ticket: SupportTicket) -> tuple[str, WorkflowEvent]:
 #         """Handle incoming ticket and prepare for AI draft."""
 #         HumanInTheLoopTicketIntakeExecutor.current_ticket = ticket
-#         
+#
 #         print("Processing ticket...")
 #         print()
-#         
+#
 #         ticket_text = f"""
 # Support Ticket Analysis Request:
-# 
+#
 # Ticket ID: {ticket.ticket_id}
 # Customer: {ticket.customer_name} (ID: {ticket.customer_id})
 # Priority: {ticket.priority.value}
 # Subject: {ticket.subject}
-# 
+#
 # Customer Message:
 # {ticket.description}
-# 
+#
 # Please analyze this ticket and draft an appropriate response.
 # """
-#         
+#
 #         event = WorkflowEvent(executor_id=self.name, data=ticket_text)
 #         return ticket_text, event
 
@@ -83,20 +83,20 @@ class Executor:
 #     """
 #     Bridge executor that processes AI draft and requests supervisor review.
 #     """
-#     
+#
 #     def __init__(self):
 #         super().__init__("DraftBridge")
-#     
+#
 #     async def handle(self, draft_response: str) -> tuple[SupervisorReviewRequest, WorkflowEvent]:
 #         """Process draft and prepare review request."""
 #         ticket = HumanInTheLoopTicketIntakeExecutor.current_ticket
-#         
+#
 #         # Display truncated draft
 #         display_draft = draft_response[:100] + "..." if len(draft_response) > 100 else draft_response
 #         print(f"AI Draft Generated:")
 #         print(f"   {display_draft}")
 #         print()
-#         
+#
 #         # Determine category based on ticket content
 #         subject_lower = ticket.subject.lower()
 #         if "refund" in subject_lower:
@@ -107,15 +107,15 @@ class Executor:
 #             category = "BILLING"
 #         else:
 #             category = "GENERAL"
-#         
+#
 #         # Create review request
 #         review_request = SupervisorReviewRequest(
 #             ticket_id=ticket.ticket_id,
 #             category=category,
 #             priority=ticket.priority.value,
-#             draft_response=draft_response
+#             draft_response=draft_response,
 #         )
-#         
+#
 #         event = WorkflowEvent(executor_id=self.name, data=review_request)
 #         return review_request, event
 
@@ -129,14 +129,14 @@ class Executor:
 #     """
 #     Executor that finalizes the response based on supervisor decision.
 #     """
-#     
+#
 #     def __init__(self):
 #         super().__init__("Finalize")
-#     
+#
 #     async def handle(self, decision: SupervisorDecision) -> tuple[str, WorkflowEvent]:
 #         """Finalize the workflow based on supervisor decision."""
 #         ticket = HumanInTheLoopTicketIntakeExecutor.current_ticket
-#         
+#
 #         if decision.action == ReviewAction.APPROVE:
 #             final_message = (
 #                 f"Response approved and sent to customer {ticket.customer_name} "
@@ -154,7 +154,7 @@ class Executor:
 #             )
 #         else:
 #             final_message = "Unknown action taken."
-#         
+#
 #         event = WorkflowEvent(executor_id=self.name, data=final_message)
 #         return final_message, event
 
@@ -162,10 +162,10 @@ class Executor:
 # Placeholder classes - REMOVE after uncommenting above
 class HumanInTheLoopTicketIntakeExecutor(Executor):
     current_ticket: Optional[SupportTicket] = None
-    
+
     def __init__(self):
         super().__init__("TicketIntake")
-    
+
     async def handle(self, ticket: SupportTicket) -> tuple[str, WorkflowEvent]:
         HumanInTheLoopTicketIntakeExecutor.current_ticket = ticket
         raise NotImplementedError("Exercise 4.1 not completed.")
@@ -174,7 +174,7 @@ class HumanInTheLoopTicketIntakeExecutor(Executor):
 class DraftBridgeExecutor(Executor):
     def __init__(self):
         super().__init__("DraftBridge")
-    
+
     async def handle(self, draft_response: str) -> tuple[SupervisorReviewRequest, WorkflowEvent]:
         raise NotImplementedError("Exercise 4.2 not completed.")
 
@@ -182,6 +182,6 @@ class DraftBridgeExecutor(Executor):
 class FinalizeExecutor(Executor):
     def __init__(self):
         super().__init__("Finalize")
-    
+
     async def handle(self, decision: SupervisorDecision) -> tuple[str, WorkflowEvent]:
         raise NotImplementedError("Exercise 4.3 not completed.")

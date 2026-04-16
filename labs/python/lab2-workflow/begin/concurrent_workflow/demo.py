@@ -2,7 +2,7 @@
 Concurrent Workflow Demo - Multi-Agent Customer Support
 
 ============================================================================
-EXERCISE 3: Concurrent Workflow Demo
+EXERCISE 3: Concurrent Workflow Demo (Steps 3.3-3.7)
 ============================================================================
 This demonstrates a concurrent workflow that sends questions to multiple
 specialist agents simultaneously (fan-out) and combines their responses (fan-in).
@@ -28,13 +28,13 @@ from .executors import (
 # ============================================================================
 # class ChatClientAgent:
 #     """AI Agent with specific expertise."""
-#     
+#
 #     def __init__(self, client: AzureOpenAI, deployment: str, name: str, instructions: str):
 #         self.client = client
 #         self.deployment = deployment
 #         self.name = name
 #         self.instructions = instructions
-#     
+#
 #     async def process(self, message: str) -> str:
 #         """Process the message and return a response."""
 #         response = self.client.chat.completions.create(
@@ -55,7 +55,7 @@ from .executors import (
 # ============================================================================
 # class ConcurrentWorkflow:
 #     """Workflow that executes agents concurrently (fan-out/fan-in pattern)."""
-#     
+#
 #     def __init__(
 #         self,
 #         start_executor: ConcurrentStartExecutor,
@@ -65,39 +65,39 @@ from .executors import (
 #         self.start_executor = start_executor
 #         self.agents = agents
 #         self.aggregation_executor = aggregation_executor
-#     
+#
 #     async def run(self, question: str) -> list[WorkflowEvent]:
 #         """Execute the concurrent workflow."""
 #         events = []
-#         
+#
 #         # Step 1: Start executor broadcasts the question
 #         _, start_event = await self.start_executor.handle(question)
 #         events.append(start_event)
-#         
+#
 #         # Step 2: Fan-out - run all agents concurrently
 #         async def run_agent(agent) -> tuple[str, str]:
 #             result = await agent.process(question)
 #             return agent.name, result
-#         
+#
 #         tasks = [run_agent(agent) for agent in self.agents]
 #         results = await asyncio.gather(*tasks)
-#         
+#
 #         # Add individual agent events
 #         responses = {}
 #         for name, response in results:
 #             events.append(WorkflowEvent(name, response))
 #             responses[name] = response
-#         
+#
 #         # Step 3: Fan-in - aggregate results
 #         combined, agg_event = await self.aggregation_executor.handle(responses)
 #         events.append(agg_event)
-#         
+#
 #         return events
 
 
 class ConcurrentWorkflowDemo:
     """Demo class for the concurrent workflow."""
-    
+
     @staticmethod
     async def run_async():
         """Run the concurrent workflow demo."""
@@ -106,7 +106,7 @@ class ConcurrentWorkflowDemo:
         print("This workflow demonstrates parallel processing with multiple AI agents:")
         print("  Customer Question -> [Billing Expert + Technical Expert] -> Combined Response")
         print()
-        
+
         # ============================================================================
         # STEP 3.5: Set up specialized AI agents
         # Uncomment the lines below
@@ -114,7 +114,7 @@ class ConcurrentWorkflowDemo:
         # # Set up the Azure OpenAI client
         # client = create_chat_client()
         # deployment = get_deployment_name()
-        # 
+        #
         # # Create specialized AI agents
         # billing_expert = ChatClientAgent(
         #     client=client,
@@ -127,7 +127,7 @@ class ConcurrentWorkflowDemo:
         # Keep responses concise (2-3 sentences).
         # """
         # )
-        # 
+        #
         # technical_expert = ChatClientAgent(
         #     client=client,
         #     deployment=deployment,
@@ -139,7 +139,7 @@ class ConcurrentWorkflowDemo:
         # Keep responses concise (2-3 sentences).
         # """
         # )
-        
+
         # ============================================================================
         # STEP 3.6: Create executors and workflow
         # Uncomment the lines below
@@ -147,36 +147,48 @@ class ConcurrentWorkflowDemo:
         # # Create executors
         # start_executor = ConcurrentStartExecutor()
         # aggregation_executor = ConcurrentAggregationExecutor()
-        # 
-        # # Create the workflow
+        #
+        # # Build the workflow
         # workflow = ConcurrentWorkflow(
         #     start_executor=start_executor,
         #     agents=[billing_expert, technical_expert],
         #     aggregation_executor=aggregation_executor,
         # )
-        
+
         # Sample customer question
-        customer_question = "My subscription was charged twice this month and the app keeps crashing when I try to view my invoice."
-        
+        customer_question = (
+            "My subscription was charged twice this month and the app keeps "
+            "crashing when I try to view my invoice."
+        )
+
         print("Customer Question:")
         print(f'   "{customer_question}"')
         print()
-        
+
         # ============================================================================
         # STEP 3.7: Execute the workflow
         # Uncomment the lines below and REMOVE the placeholder
         # ============================================================================
         # print("Sending question to Billing Expert and Technical Expert simultaneously...")
         # print()
-        # 
+        #
         # events = await workflow.run(customer_question)
-        # 
+        #
         # # Display the combined response
-        # combined_response = events[-1].data
         # print("=== Combined Expert Responses ===")
-        # print(combined_response)
+        # final_event = events[-1]
+        # print(final_event.data)
         # print()
         # print("Concurrent workflow completed!")
-        
+
         # Placeholder - REMOVE after uncommenting above
         print("Exercise 3 not completed. Please uncomment the code in demo.py and executors.py")
+
+
+async def main():
+    """Entry point for running the demo."""
+    await ConcurrentWorkflowDemo.run_async()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

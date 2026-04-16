@@ -2,7 +2,7 @@
 Sequential Workflow Executors
 
 ============================================================================
-EXERCISE 2: Create Sequential Workflow Executors
+EXERCISE 2: Create Sequential Workflow Executors (Steps 2.1-2.3)
 ============================================================================
 Executors are the building blocks of workflows. They process inputs and
 prepare data for the next step in the workflow.
@@ -41,16 +41,16 @@ class Executor:
 #     Executor that handles ticket intake and validation.
 #     Validates the ticket and formats it for the AI categorization agent.
 #     """
-#     
+#
 #     def __init__(self):
 #         super().__init__("TicketIntake")
-#     
+#
 #     async def handle(self, ticket) -> tuple[str, WorkflowEvent]:
 #         """Handle incoming ticket and prepare for categorization."""
 #         # Validate the ticket
 #         if not ticket.subject or not ticket.description:
 #             raise ValueError("Support ticket must have a subject and description.")
-#         
+#
 #         # Format the ticket for the AI categorization agent
 #         ticket_text = f"""
 # Ticket ID: {ticket.ticket_id}
@@ -60,7 +60,7 @@ class Executor:
 # Subject: {ticket.subject}
 # Description: {ticket.description}
 # """
-#         
+#
 #         event = WorkflowEvent(executor_id=self.name, data=ticket_text)
 #         return ticket_text, event
 
@@ -74,23 +74,23 @@ class Executor:
 #     """
 #     Bridge executor that processes categorization output and prepares for response generation.
 #     """
-#     
+#
 #     def __init__(self):
 #         super().__init__("CategorizationBridge")
-#     
+#
 #     async def handle(self, categorization_result: str) -> tuple[str, WorkflowEvent]:
 #         """Process categorization and prepare prompt for response agent."""
 #         print(f"   Categorization: {categorization_result}")
-#         
+#
 #         # Prepare prompt for response agent with categorization context
 #         response_prompt = f"""
 # Based on the following ticket categorization, generate a customer response:
-# 
+#
 # Categorization Result: {categorization_result}
-# 
+#
 # Please generate an appropriate customer support response.
 # """
-#         
+#
 #         event = WorkflowEvent(executor_id=self.name, data=response_prompt)
 #         return response_prompt, event
 
@@ -104,10 +104,10 @@ class Executor:
 #     """
 #     Bridge executor that processes the final response from the AI agent.
 #     """
-#     
+#
 #     def __init__(self):
 #         super().__init__("ResponseBridge")
-#     
+#
 #     async def handle(self, response: str) -> tuple[str, WorkflowEvent]:
 #         """Process final response and yield output."""
 #         event = WorkflowEvent(executor_id=self.name, data=response)
@@ -118,7 +118,7 @@ class Executor:
 class TicketIntakeExecutor(Executor):
     def __init__(self):
         super().__init__("TicketIntake")
-    
+
     async def handle(self, ticket) -> tuple[str, WorkflowEvent]:
         raise NotImplementedError("Exercise 2.1 not completed.")
 
@@ -126,7 +126,7 @@ class TicketIntakeExecutor(Executor):
 class CategorizationBridgeExecutor(Executor):
     def __init__(self):
         super().__init__("CategorizationBridge")
-    
+
     async def handle(self, categorization_result: str) -> tuple[str, WorkflowEvent]:
         raise NotImplementedError("Exercise 2.2 not completed.")
 
@@ -134,6 +134,6 @@ class CategorizationBridgeExecutor(Executor):
 class ResponseBridgeExecutor(Executor):
     def __init__(self):
         super().__init__("ResponseBridge")
-    
+
     async def handle(self, response: str) -> tuple[str, WorkflowEvent]:
         raise NotImplementedError("Exercise 2.3 not completed.")

@@ -2,7 +2,7 @@
 Sequential Workflow Demo - Customer Support Ticket System
 
 ============================================================================
-EXERCISE 2: Sequential Workflow Demo
+EXERCISE 2: Sequential Workflow Demo (Steps 2.4-2.8)
 ============================================================================
 This demonstrates a sequential AI-powered workflow that processes customer
 support tickets through a linear pipeline:
@@ -15,6 +15,7 @@ from openai import AzureOpenAI
 
 from common import SupportTicket, TicketPriority, create_chat_client
 from common.azure_openai_client_factory import get_deployment_name
+from common.ticket_loader import display_available_tickets, get_ticket_by_index, get_random_ticket, get_ticket_by_id
 from .executors import (
     TicketIntakeExecutor,
     CategorizationBridgeExecutor,
@@ -29,25 +30,25 @@ from .executors import (
 # ============================================================================
 # class CategorizationAgent:
 #     """AI Categorization Agent - categorizes the ticket."""
-#     
+#
 #     INSTRUCTIONS = """
 # You are a customer support ticket categorization specialist.
 # Analyze the incoming support ticket and categorize it into one of these categories:
 # - BILLING: Payment issues, invoices, subscription, refunds
 # - TECHNICAL: Software bugs, errors, performance issues, how-to questions
 # - GENERAL: Account inquiries, feedback, general questions
-# 
+#
 # Respond with a JSON object in this exact format:
 # {"category": "CATEGORY_NAME", "priority": "HIGH|MEDIUM|LOW", "summary": "brief summary"}
-# 
+#
 # Keep your response concise and only output the JSON.
 # """
-#     
+#
 #     def __init__(self, client: AzureOpenAI, deployment: str):
 #         self.client = client
 #         self.deployment = deployment
 #         self.name = "CategorizationAgent"
-#     
+#
 #     async def process(self, ticket_text: str) -> str:
 #         """Categorize the ticket using AI."""
 #         response = self.client.chat.completions.create(
@@ -66,11 +67,11 @@ from .executors import (
 # ============================================================================
 # class ResponseAgent:
 #     """AI Response Agent - generates the customer response."""
-#     
+#
 #     INSTRUCTIONS = """
 # You are a friendly and professional customer support representative.
 # Based on the ticket category and details provided, generate a helpful response to the customer.
-# 
+#
 # Guidelines:
 # - Be empathetic and professional
 # - Acknowledge the customer's issue
@@ -78,12 +79,12 @@ from .executors import (
 # - Keep the response concise (3-4 sentences)
 # - Include a reference ticket number format: TKT-XXXXX
 # """
-#     
+#
 #     def __init__(self, client: AzureOpenAI, deployment: str):
 #         self.client = client
 #         self.deployment = deployment
 #         self.name = "ResponseAgent"
-#     
+#
 #     async def process(self, prompt: str) -> str:
 #         """Generate customer response using AI."""
 #         response = self.client.chat.completions.create(
@@ -102,7 +103,7 @@ from .executors import (
 # ============================================================================
 # class SequentialWorkflow:
 #     """Sequential workflow that chains executors together."""
-#     
+#
 #     def __init__(
 #         self,
 #         ticket_intake: TicketIntakeExecutor,
@@ -116,37 +117,37 @@ from .executors import (
 #         self.categorization_bridge = categorization_bridge
 #         self.response_agent = response_agent
 #         self.response_bridge = response_bridge
-#     
+#
 #     async def run(self, ticket: SupportTicket) -> list[WorkflowEvent]:
 #         """Execute the sequential workflow."""
 #         events = []
-#         
+#
 #         # Step 1: Ticket Intake
 #         ticket_text, event = await self.ticket_intake.handle(ticket)
 #         events.append(event)
-#         
+#
 #         # Step 2: AI Categorization
 #         categorization = await self.categorization_agent.process(ticket_text)
 #         events.append(WorkflowEvent(self.categorization_agent.name, categorization))
-#         
+#
 #         # Step 3: Categorization Bridge
 #         response_prompt, event = await self.categorization_bridge.handle(categorization)
 #         events.append(event)
-#         
+#
 #         # Step 4: AI Response Generation
 #         response = await self.response_agent.process(response_prompt)
 #         events.append(WorkflowEvent(self.response_agent.name, response))
-#         
+#
 #         # Step 5: Response Bridge (final output)
 #         final_response, event = await self.response_bridge.handle(response)
 #         events.append(event)
-#         
+#
 #         return events
 
 
 class SequentialWorkflowDemo:
     """Demo class for the sequential workflow."""
-    
+
     @staticmethod
     async def run_async():
         """Run the sequential workflow demo."""
@@ -155,7 +156,7 @@ class SequentialWorkflowDemo:
         print("This workflow demonstrates sequential processing of support tickets:")
         print("  1. Ticket Intake -> 2. AI Categorization -> 3. AI Response Generation")
         print()
-        
+
         # ============================================================================
         # STEP 2.7: Set up the workflow
         # Uncomment the lines below
@@ -163,17 +164,17 @@ class SequentialWorkflowDemo:
         # # Set up the Azure OpenAI client
         # client = create_chat_client()
         # deployment = get_deployment_name()
-        # 
+        #
         # # Create executors
         # ticket_intake = TicketIntakeExecutor()
         # categorization_bridge = CategorizationBridgeExecutor()
         # response_bridge = ResponseBridgeExecutor()
-        # 
+        #
         # # Create AI agents
         # categorization_agent = CategorizationAgent(client, deployment)
         # response_agent = ResponseAgent(client, deployment)
-        # 
-        # # Create the workflow
+        #
+        # # Build the sequential workflow
         # workflow = SequentialWorkflow(
         #     ticket_intake=ticket_intake,
         #     categorization_agent=categorization_agent,
@@ -181,42 +182,55 @@ class SequentialWorkflowDemo:
         #     response_agent=response_agent,
         #     response_bridge=response_bridge,
         # )
-        
-        # Sample customer support ticket
-        sample_ticket = SupportTicket(
-            ticket_id="TKT-12345",
-            customer_id="CUST-12345",
-            customer_name="John Smith",
-            subject="Unable to access my account after password reset",
-            description="I tried to reset my password yesterday but now I cannot log in. "
-                       "I've tried multiple times and keep getting an 'invalid credentials' error. "
-                       "This is urgent as I need to access my billing information.",
-            priority=TicketPriority.HIGH
-        )
-        
+
+        # Load a ticket from the data file
+        display_available_tickets()
+        print()
+        user_input = input("Enter ticket number (1-5) or press Enter for random: ").strip()
+
+        if not user_input:
+            sample_ticket = get_random_ticket()
+            print(f"Randomly selected: {sample_ticket.ticket_id}")
+        elif user_input.isdigit():
+            sample_ticket = get_ticket_by_index(int(user_input))
+        else:
+            sample_ticket = get_ticket_by_id(user_input) or get_random_ticket()
+        print()
+
         print("Incoming Support Ticket:")
         print(f"   Ticket ID: {sample_ticket.ticket_id}")
         print(f"   Customer: {sample_ticket.customer_name} ({sample_ticket.customer_id})")
         print(f"   Priority: {sample_ticket.priority.value}")
         print(f"   Subject: {sample_ticket.subject}")
-        print(f"   Description: {sample_ticket.description[:80]}...")
+        print(f"   Description: {sample_ticket.description}")
         print()
-        
+
         # ============================================================================
         # STEP 2.8: Execute the workflow
         # Uncomment the lines below and REMOVE the placeholder
         # ============================================================================
         # print("Processing ticket through sequential workflow...")
         # print()
-        # 
+        #
         # events = await workflow.run(sample_ticket)
-        # 
+        #
         # # Display the final response
-        # final_response = events[-1].data
-        # print("=== Generated Customer Response ===")
-        # print(final_response)
+        # print()
+        # print("=== Workflow Output ===")
+        # print()
+        # final_event = events[-1]
+        # print(f"Final Response:\n{final_event.data}")
         # print()
         # print("Sequential workflow completed!")
-        
+
         # Placeholder - REMOVE after uncommenting above
         print("Exercise 2 not completed. Please uncomment the code in demo.py and executors.py")
+
+
+async def main():
+    """Entry point for running the demo."""
+    await SequentialWorkflowDemo.run_async()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
