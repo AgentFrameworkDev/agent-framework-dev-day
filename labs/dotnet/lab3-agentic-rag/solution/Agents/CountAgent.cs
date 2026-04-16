@@ -149,7 +149,7 @@ public static class CountAgent
     {
         var searchFunction = CreateSearchFunction(searchService);
 
-        return chatClient.CreateAIAgent(
+        return chatClient.AsAIAgent(
             instructions: Instructions,
             name: "count_agent",
             tools: new[] { AIFunctionFactory.Create(searchFunction) }

@@ -4,7 +4,9 @@ Configuration module for Azure AI Search and OpenAI settings.
 import os
 from dataclasses import dataclass
 from azure.identity import DefaultAzureCredential
+from dotenv import load_dotenv
 
+load_dotenv()
 
 @dataclass
 class AzureConfig:

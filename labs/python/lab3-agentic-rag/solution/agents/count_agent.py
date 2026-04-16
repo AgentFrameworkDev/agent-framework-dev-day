@@ -3,9 +3,8 @@ Count agent for answering questions that require counting tickets with filters.
 """
 import json
 from typing import Annotated
-from agent_framework import ChatAgent, ai_function
-from agent_framework.azure import AzureOpenAIChatClient
-
+from agent_framework import Agent, Message, tool
+from agent_framework.openai import OpenAIChatClient
 from services import SearchService
 
 
@@ -47,7 +46,7 @@ def create_count_search_function(search_service: SearchService):
         AI function for count searches
     """
     
-    @ai_function
+    @tool
     async def count_search(
         user_question: Annotated[str, "User question requiring counting items"]
     ) -> str:
@@ -83,11 +82,10 @@ OData filter:
 """
         
         # Call LLM to generate filter
-        from agent_framework import ChatMessage
         try:
 
             filter_response = await search_service.chat_client.get_response(
-                messages=filter_prompt
+                [Message(role="user", contents=filter_prompt)]
             )
             odata_filter = filter_response.messages[0].text.strip()
         except Exception as e:
@@ -153,9 +151,9 @@ Base your count strictly on tickets that match ALL criteria in the question.
 
 
 def create_count_agent(
-    chat_client: AzureOpenAIChatClient,
+    chat_client: OpenAIChatClient,
     search_service: SearchService
-) -> ChatAgent:
+) -> Agent:
     """
     Create the count specialist agent.
     
@@ -164,13 +162,14 @@ def create_count_agent(
         search_service: Search service for ticket queries
         
     Returns:
-        Configured count ChatAgent with search capabilities
+        Configured count Agent with search capabilities
     """
     # Create the AI function with the search service
     count_search_fn = create_count_search_function(search_service)
     
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=COUNT_AGENT_INSTRUCTIONS,
         name="count_agent",
         tools=[count_search_fn],
+        require_per_service_call_history_persistence=True,
     )

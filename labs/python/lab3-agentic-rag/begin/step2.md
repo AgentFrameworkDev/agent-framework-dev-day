@@ -207,7 +207,7 @@ def create_yes_no_agent(
     # Create the AI function with the search service
     yes_no_search_fn = create_yes_no_search_function(search_service)
     
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=YES_NO_AGENT_INSTRUCTIONS,
         name="yes_no_agent",
         tools=[yes_no_search_fn],

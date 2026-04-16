@@ -3,8 +3,8 @@ Comparative agent for answering questions that compare multiple items.
 """
 import json
 from typing import Annotated
-from agent_framework import ChatAgent, ai_function
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, Message, tool
+from agent_framework.openai import OpenAIChatClient
 
 from services import SearchService
 
@@ -61,7 +61,7 @@ def create_comparative_search_function(search_service: SearchService):
         AI function for comparative searches
     """
     
-    @ai_function
+    @tool
     async def comparative_search(
         user_question: Annotated[str, "User question requiring comparison between multiple items"]
     ) -> str:
@@ -98,35 +98,53 @@ Respond ONLY with the JSON object.
 """
         
         # Call LLM to parse the question
-        from agent_framework import ChatMessage
-        parse_response = await search_service.chat_client.get_response(
-            messages=parse_prompt
-        )
-        
         try:
-            # Extract JSON from response
-            response_text = parse_response.messages[0].text.strip()
-            # Remove markdown code blocks if present
-            if "```json" in response_text:
-                response_text = response_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0].strip()
-            
-            parsed = json.loads(response_text)
-            item_1 = parsed["item_1"]
-            item_2 = parsed["item_2"]
-            additional_items = parsed.get("additional_items", [])
-            comparison_type = parsed.get("comparison_type", "count")
-            explanation = parsed.get("explanation", "")
-            
-            # Combine all items to compare
-            all_items = [item_1, item_2] + additional_items
-        except Exception as e:
-            return (
-                f"Question: {user_question}\n\n"
-                f"Error: Unable to parse the comparison question. Please rephrase your question.\n"
-                f"Details: {str(e)}"
+            parse_response = await search_service.chat_client.get_response(
+                [Message(role="user", contents=parse_prompt)]
             )
+            response_text = parse_response.messages[0].text.strip()
+        except Exception as e:
+            # Fallback: use simple keyword extraction from the question
+            print(f"  [comparative_agent] LLM parse failed ({e}), using fallback")
+            # Try to extract items from "X or Y" pattern
+            parts = user_question.lower().replace("?", "").split(" or ")
+            if len(parts) >= 2:
+                item_1 = parts[0].split("with")[-1].strip() if "with" in parts[0] else parts[0].strip()
+                item_2 = parts[-1].strip()
+                all_items = [item_1, item_2]
+                comparison_type = "count"
+                explanation = f"Comparing {item_1} vs {item_2}"
+            else:
+                return (
+                    f"Question: {user_question}\n\n"
+                    f"Error: Unable to parse the comparison question.\n"
+                    f"Details: {str(e)}"
+                )
+            response_text = None
+
+        if response_text is not None:
+            try:
+                # Remove markdown code blocks if present
+                if "```json" in response_text:
+                    response_text = response_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in response_text:
+                    response_text = response_text.split("```")[1].split("```")[0].strip()
+
+                parsed = json.loads(response_text)
+                item_1 = parsed["item_1"]
+                item_2 = parsed["item_2"]
+                additional_items = parsed.get("additional_items", [])
+                comparison_type = parsed.get("comparison_type", "count")
+                explanation = parsed.get("explanation", "")
+
+                # Combine all items to compare
+                all_items = [item_1, item_2] + additional_items
+            except Exception as e:
+                return (
+                    f"Question: {user_question}\n\n"
+                    f"Error: Unable to parse the comparison question. Please rephrase your question.\n"
+                    f"Details: {str(e)}"
+                )
         
         # Perform separate searches for each item
         comparison_results = {}
@@ -193,9 +211,9 @@ Base your answer strictly on the search results provided.
 
 
 def create_comparative_agent(
-    chat_client: AzureOpenAIChatClient,
+    chat_client: OpenAIChatClient,
     search_service: SearchService
-) -> ChatAgent:
+) -> Agent:
     """
     Create the comparative specialist agent.
     
@@ -204,13 +222,14 @@ def create_comparative_agent(
         search_service: Search service for ticket queries
         
     Returns:
-        Configured comparative ChatAgent with search capabilities
+        Configured comparative Agent with search capabilities
     """
     # Create the AI function with the search service
     comparative_search_fn = create_comparative_search_function(search_service)
     
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=COMPARATIVE_AGENT_INSTRUCTIONS,
         name="comparative_agent",
         tools=[comparative_search_fn],
+        require_per_service_call_history_persistence=True,
     )

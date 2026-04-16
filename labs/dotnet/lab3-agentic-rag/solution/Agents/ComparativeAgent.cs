@@ -182,7 +182,7 @@ public static class ComparativeAgent
     {
         var searchFunction = CreateSearchFunction(searchService);
 
-        return chatClient.CreateAIAgent(
+        return chatClient.AsAIAgent(
             instructions: Instructions,
             name: "comparative_agent",
             tools: new[] { AIFunctionFactory.Create(searchFunction) }

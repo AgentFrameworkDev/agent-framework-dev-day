@@ -3,8 +3,8 @@ Intersection agent for answering questions that require items matching multiple 
 """
 import json
 from typing import Annotated
-from agent_framework import ChatAgent, ai_function
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, Message, tool
+from agent_framework.openai import OpenAIChatClient
 
 from services import SearchService
 
@@ -48,7 +48,7 @@ def create_intersection_search_function(search_service: SearchService):
         AI function for intersection searches
     """
     
-    @ai_function
+    @tool
     async def intersection_search(
         user_question: Annotated[str, "User question requiring finding items that match multiple criteria"]
     ) -> str:
@@ -82,30 +82,48 @@ Respond ONLY with the JSON object.
 """
         
         # Call LLM to parse the question
-        parse_response = await search_service.chat_client.get_response(
-            messages=parse_prompt
-        )
-        
         try:
-            # Extract JSON from response
-            response_text = parse_response.messages[0].text.strip()
-            # Remove markdown code blocks if present
-            if "```json" in response_text:
-                response_text = response_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0].strip()
-            
-            parsed = json.loads(response_text)
-            criterion_1 = parsed["criterion_1"]
-            criterion_2 = parsed["criterion_2"]
-            combined_search = f"'{criterion_1}' AND '{criterion_2}'"
-            explanation = parsed.get("explanation", "")
-        except Exception as e:
-            return (
-                f"Question: {user_question}\n\n"
-                f"Error: Unable to parse the intersection question. Please rephrase your question.\n"
-                f"Details: {str(e)}"
+            parse_response = await search_service.chat_client.get_response(
+                [Message(role="user", contents=parse_prompt)]
             )
+            response_text = parse_response.messages[0].text.strip()
+        except Exception as e:
+            # Fallback: split on "and" to extract criteria
+            print(f"  [intersection_agent] LLM parse failed ({e}), using fallback")
+            q_lower = user_question.lower().rstrip("?")
+            if " and " in q_lower:
+                parts = q_lower.split(" and ", 1)
+                criterion_1 = parts[0].split("for")[-1].strip() if "for" in parts[0] else parts[0].strip()
+                criterion_2 = parts[1].strip()
+                combined_search = f"'{criterion_1}' AND '{criterion_2}'"
+                explanation = f"Find items matching both '{criterion_1}' and '{criterion_2}'"
+            else:
+                return (
+                    f"Question: {user_question}\n\n"
+                    f"Error: Unable to parse the intersection question.\n"
+                    f"Details: {str(e)}"
+                )
+            response_text = None
+
+        if response_text is not None:
+            try:
+                # Remove markdown code blocks if present
+                if "```json" in response_text:
+                    response_text = response_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in response_text:
+                    response_text = response_text.split("```")[1].split("```")[0].strip()
+
+                parsed = json.loads(response_text)
+                criterion_1 = parsed["criterion_1"]
+                criterion_2 = parsed["criterion_2"]
+                combined_search = f"'{criterion_1}' AND '{criterion_2}'"
+                explanation = parsed.get("explanation", "")
+            except Exception as e:
+                return (
+                    f"Question: {user_question}\n\n"
+                    f"Error: Unable to parse the intersection question. Please rephrase your question.\n"
+                    f"Details: {str(e)}"
+                )
         
         # Perform combined search to find items matching all criteria
         combined_results = search_service.search_tickets(combined_search, top_k=20, include_semantic_search=False)
@@ -183,9 +201,9 @@ Base your answer strictly on the search results provided.
 
 
 def create_intersection_agent(
-    chat_client: AzureOpenAIChatClient,
+    chat_client: OpenAIChatClient,
     search_service: SearchService
-) -> ChatAgent:
+) -> Agent:
     """
     Create the intersection specialist agent.
     
@@ -199,8 +217,9 @@ def create_intersection_agent(
     # Create the AI function with the search service
     intersection_search_fn = create_intersection_search_function(search_service)
     
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=INTERSECTION_AGENT_INSTRUCTIONS,
         name="intersection_agent",
         tools=[intersection_search_fn],
+        require_per_service_call_history_persistence=True,
     )

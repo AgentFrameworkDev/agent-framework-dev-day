@@ -86,7 +86,7 @@ public static class YesNoAgent
     {
         var searchFunction = CreateSearchFunction(searchService);
 
-        return chatClient.CreateAIAgent(
+        return chatClient.AsAIAgent(
             instructions: Instructions,
             name: "yes_no_agent",
             tools: new[] { AIFunctionFactory.Create(searchFunction) }

@@ -3,8 +3,8 @@ Yes/No agent for answering binary questions about IT support tickets.
 """
 import json
 from typing import Annotated
-from agent_framework import ChatAgent, ai_function
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, tool
+from agent_framework.openai import OpenAIChatClient
 
 from services import SearchService
 
@@ -46,7 +46,7 @@ def create_yes_no_search_function(search_service: SearchService):
         AI function for yes/no searches
     """
     
-    @ai_function
+    @tool
     def yes_or_no_search(
         user_question: Annotated[str, "User question to answer with yes or no"]
     ) -> str:
@@ -97,9 +97,9 @@ Base your answer strictly on the evidence from the search results provided.
 
 
 def create_yes_no_agent(
-    chat_client: AzureOpenAIChatClient,
+    chat_client: OpenAIChatClient,
     search_service: SearchService
-) -> ChatAgent:
+) -> Agent:
     """
     Create the yes/no specialist agent.
     
@@ -113,8 +113,9 @@ def create_yes_no_agent(
     # Create the AI function with the search service
     yes_no_search_fn = create_yes_no_search_function(search_service)
     
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=YES_NO_AGENT_INSTRUCTIONS,
         name="yes_no_agent",
         tools=[yes_no_search_fn],
+        require_per_service_call_history_persistence=True,
     )

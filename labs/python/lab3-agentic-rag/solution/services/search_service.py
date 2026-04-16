@@ -7,7 +7,7 @@ from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 from azure.search.documents.models import VectorizedQuery
 from azure.identity import get_bearer_token_provider
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework.openai import OpenAIChatClient
 from openai import AzureOpenAI
 
 from config import AzureConfig
@@ -16,7 +16,7 @@ from config import AzureConfig
 class SearchService:
     """Service for searching IT support tickets in Azure AI Search."""
     
-    def __init__(self, config: AzureConfig, chat_client: AzureOpenAIChatClient):
+    def __init__(self, config: AzureConfig, chat_client: OpenAIChatClient):
         """
         Initialize the search service.
         

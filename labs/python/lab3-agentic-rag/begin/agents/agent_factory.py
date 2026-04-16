@@ -4,8 +4,8 @@ Agent factory for creating all specialized agents.
 This module imports individual agent creation functions and provides
 a unified AgentFactory class for easy agent instantiation.
 """
-from agent_framework import ChatAgent
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent
+from agent_framework.openai import OpenAIChatClient
 
 from agents import (
     classifier_agent,
@@ -13,10 +13,11 @@ from agents import (
 )
 from services import SearchService
 
+
 class AgentFactory:
     """Factory for creating specialized agents."""
     
-    def __init__(self, chat_client: AzureOpenAIChatClient, search_service: SearchService):
+    def __init__(self, chat_client: OpenAIChatClient, search_service: SearchService):
         """
         Initialize the agent factory.
         
@@ -27,12 +28,12 @@ class AgentFactory:
         self.chat_client = chat_client
         self.search_service = search_service
     
-    def create_all_agents(self) -> dict[str, ChatAgent]:
+    def create_all_agents(self) -> dict[str, Agent]:
         """
         Create all agents needed for the system.
         
         Returns:
-            Dictionary mapping agent names to ChatAgent instances
+            Dictionary mapping agent names to Agent instances
         """
         return {
             "classifier": classifier_agent.create_classifier_agent(self.chat_client),

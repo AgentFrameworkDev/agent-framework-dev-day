@@ -161,7 +161,7 @@ public static class MultiHopAgent
     {
         var searchFunction = CreateSearchFunction(searchService);
 
-        return chatClient.CreateAIAgent(
+        return chatClient.AsAIAgent(
             instructions: Instructions,
             name: "multi_hop_agent",
             tools: new[] { AIFunctionFactory.Create(searchFunction) }
