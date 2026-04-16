@@ -19,6 +19,7 @@ public static class ClassifierAgent
         ## Database Schema
         The database contains IT support tickets with these fields:
         - Id: unique identifier
+        - Create_Date: date the ticket was created
         - Subject: ticket subject
         - Body: ticket question/description
         - Answer: ticket response/solution
