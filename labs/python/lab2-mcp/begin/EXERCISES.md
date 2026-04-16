@@ -1,11 +1,13 @@
-# MCP Workshop Lab Exercises (Python) - UPDATED
+# MCP Workshop Lab Exercises (Python)
 
 Welcome to the Model Context Protocol (MCP) Workshop! In this hands-on lab, you'll learn how to:
 - Configure Azure OpenAI credentials via JSON-based .env file
-- Create an MCP Server with tools
+- Create a Local MCP Server with tools using STDIO transport
 - Define MCP tools with decorators
-- Connect to MCP servers from an AI Agent client
-- Use both local (STDIO) and remote (HTTP/SSE) transports
+- Connect an AI Agent client to the local MCP server
+- Build a REST API backend and wrap it with a Remote MCP Bridge
+- Connect an AI Agent to a Remote MCP Server via Streamable HTTP
+- Use MCP tools in an interactive AI chat session
 
 ## Prerequisites
 
@@ -18,13 +20,12 @@ Welcome to the Model Context Protocol (MCP) Workshop! In this hands-on lab, you'
 
 ```
 lab2-mcp/begin/
-├── mcp_agent_client/     # AI Agent that consumes MCP servers (Exercises 1, 3, 4)
+├── mcp_agent_client/     # AI Agent that consumes MCP servers (Exercises 1, 3, 6)
 ├── mcp_local_server/     # Local MCP server with STDIO transport (Exercise 2)
-├── mcp_bridge/           # Remote MCP server with HTTP/SSE transport (pre-completed)
-├── mcp_remote_server/    # Backend REST API (pre-completed)
+├── mcp_remote_server/    # REST API backend (Exercise 4)
+├── mcp_bridge/           # MCP Bridge - Streamable HTTP wrapping REST API (Exercise 5)
 ├── mcp-concepts.ipynb    # Educational notebook
-├── EXERCISES.md          # Original instructions (outdated)
-└── EXERCISES(NEW).md     # This file - Updated instructions
+└── EXERCISES.md          # This file - exercise instructions
 
 # Note: requirements.txt is located at labs/python/requirements.txt
 # Note: .env file should be at labs/python/.env
@@ -41,13 +42,13 @@ Before starting the exercises, set up your Python environment:
 cd labs/python
 
 # Create virtual environment (if not already created)
-python -m venv venv
+python -m venv .venv
 
 # Activate (Windows)
-venv\Scripts\activate
+.venv\Scripts\activate
 
 # Activate (Linux/Mac)
-source venv/bin/activate
+source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -57,89 +58,65 @@ pip install -r requirements.txt
 
 ## Exercise 1: Configure Azure OpenAI Credentials
 
-**Objective:** Set up the Azure OpenAI configuration via a JSON-based .env file and uncomment the configuration code.
+**Objective:** Set up the Azure OpenAI configuration via a JSON-based .env file and uncomment the configuration code in the agent client.
 
 ### Current State in Begin Folder
 The code in `mcp_agent_client/main.py` has:
-- ✅ `find_config_path()` function **already implemented** (line 27)
-- ✅ Environment variables are automatically loaded using **python-dotenv** on startup (lines 42-49)
-- ❌ Environment variable reading code is **COMMENTED OUT** (lines 62-68)
-- ❌ Placeholder values are being used instead (lines 70-71)
-- ❌ `create_openai_client()` function is **COMMENTED OUT** (lines 83-105)
+- ✅ `find_config_path()` and `load_env_file()` functions **already implemented**
+- ✅ `validate_env_config()` function structure is in place
+- ❌ Environment variable reading code inside `validate_env_config()` is **COMMENTED OUT** (STEP 1.1)
+- ❌ Placeholder values are being printed instead
+- ❌ `create_azure_ai_client()` function is **COMMENTED OUT** (STEP 1.2)
 
 ### Step 1.1: Create the .env file
 
-**IMPORTANT:** The code uses standard **python-dotenv** library for environment variables.
+Create or update the file at `labs/python/.env` with JSON format:
 
-Create or update the file at `labs/python/.env` with the following standard format:
-
-```bash
-# Azure OpenAI Configuration
-AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com/
-AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4o-mini
-
-# Authentication - API Key (recommended)
-AZURE_OPENAI_API_KEY=your-api-key-here
+```json
+{
+    "AZURE_OPENAI_ENDPOINT": "https://your-resource-name.openai.azure.com/",
+    "AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-4o-mini",
+    "AZURE_OPENAI_API_KEY": "your-api-key-here"
+}
 ```
 
 **Notes:**
-- ✅ Comments are allowed (lines starting with `#`)
-- ✅ Standard KEY=VALUE format (no quotes needed unless value has spaces)
-- ✅ Much simpler than JSON format
 - Replace `your-resource-name` with your actual Azure OpenAI resource name
 - The API key is recommended; Azure CLI authentication is used as fallback
 
 ### Step 1.2: Uncomment environment variable reading
 
-Open `mcp_agent_client/main.py` and find **STEP 1.1** (around line 62).
+Open `mcp_agent_client/main.py` and find **STEP 1.1** inside the `validate_env_config()` function.
 
 **Uncomment these lines:**
 ```python
-endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
-deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or \
-             os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME") or \
-             "gpt-4o-mini"
+endpoint = os.environ.get("AZURE_AI_PROJECT_ENDPOINT") or os.environ.get("AZURE_OPENAI_ENDPOINT")
+deployment = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME") or os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
+
+print(f"\nAzure OpenAI Configuration:")
+print(f"  Endpoint: {endpoint or 'Not set'}")
+print(f"  Deployment: {deployment}")
 
 if not endpoint:
-    raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is not set")
+    print("\n⚠ Warning: Azure OpenAI endpoint not configured. AI demos will be skipped.")
 ```
 
-**Then DELETE the placeholder lines below them (lines 70-71):**
+**Then DELETE the placeholder lines below them:**
 ```python
 # Placeholder values - REPLACE after uncommenting above
-endpoint = "https://YOUR-RESOURCE.openai.azure.com/"
-deployment = "gpt-4o-mini"
+print(f"\nAzure OpenAI Configuration:")
+print(f"  Endpoint: https://YOUR-RESOURCE.openai.azure.com/")
+print(f"  Deployment: gpt-4o-mini")
 ```
 
 ### Step 1.3: Uncomment the Azure OpenAI client function
 
-Find **STEP 1.2** (around line 83) and **uncomment the entire function:**
-```python
-def create_openai_client() -> AzureOpenAI:
-    """Create Azure OpenAI client with API key or Azure CLI credentials."""
-    # Try using API key from environment first
-    api_key = os.environ.get("AZURE_OPENAI_API_KEY")
-    
-    if api_key:
-        # Use API key authentication
-        return AzureOpenAI(
-            azure_endpoint=endpoint,
-            api_key=api_key,
-            api_version="2024-02-15-preview"
-        )
-    else:
-        # Fallback to Azure CLI credentials
-        credential = AzureCliCredential()
-        token = credential.get_token("https://cognitiveservices.azure.com/.default")
-        
-        return AzureOpenAI(
-            azure_endpoint=endpoint,
-            api_key=token.token,
-            api_version="2024-02-15-preview"
-        )
-```
+Find **STEP 1.2** and **uncomment the entire `create_azure_ai_client()` function**.
 
-**Note:** This function now supports both API key and Azure CLI authentication, avoiding tenant mismatch issues.
+This function supports multiple authentication methods:
+1. **API Key** (highest priority) - uses `AZURE_OPENAI_API_KEY`
+2. **Service Principal** - uses `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`
+3. **Azure CLI** fallback - uses `az login` credentials
 
 ### Step 1.4: Verify the configuration
 
@@ -152,28 +129,39 @@ python -m mcp_agent_client.main
 
 **Expected output:**
 ```
-Loaded environment variables from: C:\...\labs\python/.env
 ============================================================
-       MCP Workshop - Agent Client Demo (Python)
-   Demonstrating Local and Remote MCP Servers
+           MCP Workshop - Agent Client Demo
+        Demonstrating Local MCP Server (STDIO)
 ============================================================
 
-Using Azure OpenAI endpoint: https://your-resource-name.openai.azure.com/
-Deployment: gpt-4o-mini
+Environment Configuration Validation
+============================================================
+
+Config path: C:\...\labs\python
+
+✓ .env file loaded successfully from: C:\...\labs\python
+  Loaded 3 environment variables:
+    - AZURE_OPENAI_ENDPOINT: https://your-resource.openai.azure.com/
+    - AZURE_OPENAI_DEPLOYMENT_NAME: gpt-4o-mini
+    - AZURE_OPENAI_API_KEY: ****
+
+Azure OpenAI Configuration:
+  Endpoint: https://your-resource.openai.azure.com/
+  Deployment: gpt-4o-mini
 ```
 
-If you see "Loaded environment variables" and your actual endpoint (not the placeholder), Exercise 1 is complete!
+If you see your actual endpoint (not the placeholder), Exercise 1 is complete!
 
 **Common Errors:**
-- `Warning: .env file not found` → Create the .env file at `labs/python/.env`
-- `ValueError: AZURE_OPENAI_ENDPOINT environment variable is not set` → Check your .env file has the correct KEY=VALUE format
-- Azure tenant mismatch error → Make sure you have `AZURE_OPENAI_API_KEY` in your .env file
+- `No .env file found` → Create the .env file at `labs/python/.env`
+- `Warning: Failed to load .env file` → Check your .env file has valid JSON format
+- Azure tenant mismatch → Make sure you have `AZURE_OPENAI_API_KEY` in your .env file
 
 ---
 
-## Exercise 2: Create the MCP Server
+## Exercise 2: Create the Local MCP Server
 
-**Objective:** Set up the MCP server that will expose tools via STDIO transport.
+**Objective:** Set up the MCP server that will expose ticket management tools via STDIO transport.
 
 ### Current State
 ❌ All code in `mcp_local_server/main.py` is **commented out** - you need to uncomment it.
@@ -182,7 +170,7 @@ If you see "Loaded environment variables" and your actual endpoint (not the plac
 
 ### Step 2.1: Create the server instance
 
-Open `mcp_local_server/main.py` and find **STEP 2.1** (around line 37). 
+Open `mcp_local_server/main.py` and find **STEP 2.1**.
 
 **Uncomment** this line:
 ```python
@@ -191,26 +179,24 @@ server = Server("mcp-local-server")
 
 ### Step 2.2: Define the list_tools handler
 
-Find **STEP 2.2** (around line 46) and **uncomment the entire function**:
+Find **STEP 2.2** and **uncomment the entire function**:
 
 ```python
 @server.list_tools()
 async def list_tools() -> list[Tool]:
     """List all available tools."""
     return [
-        Tool(
-            name="GetConfig",
-            ...
-        ),
-        ...
+        Tool(name="GetAllTickets", ...),
+        Tool(name="GetTicket", ...),
+        Tool(name="UpdateTicket", ...),
     ]
 ```
 
-The function should span approximately 50 lines defining 4 tools: GetConfig, UpdateConfig, GetTicket, UpdateTicket.
+The function defines 3 tools: GetAllTickets, GetTicket, and UpdateTicket.
 
 ### Step 2.3: Define the call_tool handler
 
-Find **STEP 2.3** (around line 123) and **uncomment the entire function**:
+Find **STEP 2.3** and **uncomment the entire function**:
 
 ```python
 @server.call_tool()
@@ -219,11 +205,11 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     ...
 ```
 
-This function handles the actual execution of the tools (about 30 lines).
+This function handles the actual execution of the tools.
 
 ### Step 2.4: Define the main function
 
-Find **STEP 2.4** (around line 164) and **uncomment the entire function**:
+Find **STEP 2.4** and **uncomment the entire function**:
 
 ```python
 async def main():
@@ -234,7 +220,7 @@ async def main():
 
 ### Step 2.5: Run the server
 
-Find **STEP 2.5** (around line 171) and **uncomment these lines**:
+Find **STEP 2.5** and **uncomment these lines**:
 
 ```python
 if __name__ == "__main__":
@@ -260,50 +246,50 @@ No output means success!
 
 ---
 
-## Exercise 3: Connect to Local MCP Server
+## Exercise 3: Connect to Local MCP Server with AI Agent
 
-**Objective:** Enable the AI Agent client to connect to the local MCP server and use its tools.
+**Objective:** Enable the AI Agent client to connect to the local MCP server, discover tools, and use them in an interactive chat session.
 
 ### Current State
-❌ The `demo_local_mcp()` function is **COMMENTED OUT** (around line 113).
-❌ The function call in `main()` is also **commented out** (around line 290).
+❌ The `demo_local_mcp()` function is **COMMENTED OUT** in `mcp_agent_client/main.py`
+❌ The function call in `main()` is also **commented out**
 
 ### Prerequisites
-⚠️ **You must complete Exercise 2 first** - the local MCP server must be functional.
+⚠️ **You must complete Exercises 1 and 2 first:**
+- Exercise 1: Azure OpenAI must be configured
+- Exercise 2: Local MCP server must be functional
 
 ### Step 3.1: Uncomment the demo_local_mcp function
 
-Open `mcp_agent_client/main.py` and find **EXERCISE 3** (around line 113).
+Open `mcp_agent_client/main.py` and find **EXERCISE 3**.
 
-**Uncomment the entire `demo_local_mcp()` function** - it should be about 50 lines of code from line 113 to line 162, including:
-- STEP 3.1: Create STDIO server parameters
-- STEP 3.2: Connect using stdio_client
-- STEP 3.3: Initialize the session
-- STEP 3.4: List available tools
-- STEP 3.5: Call GetConfig, UpdateConfig, and GetTicket tools
+**Uncomment the entire `demo_local_mcp()` function**, which includes:
+- **STEP 3.1:** Create STDIO server parameters pointing to `mcp_local_server.main`
+- **STEP 3.2:** Connect using `stdio_client`
+- **STEP 3.3:** Initialize the MCP session
+- **STEP 3.4:** List available tools from the server
+- **STEP 3.5:** Create AI client and run interactive session
 
 ### Step 3.2: Enable the Local MCP Demo in main()
 
-Find the `main()` function (around line 290) and look for this section:
+In the `main()` function, find the menu handler for choice `"1"`:
+
 ```python
 if choice == "1":
-    # ================================================================
+    # ===========================================================
     # EXERCISE 3: Uncomment to enable Local MCP Demo
-    # ================================================================
-    # await demo_local_mcp()
+    # ===========================================================
+    # exit_app = await demo_local_mcp()
     print("Exercise 3 not completed. Please uncomment the demo_local_mcp function and call.")
 ```
 
 **Uncomment** the function call and **delete** the print statement:
 ```python
 if choice == "1":
-    # ================================================================
-    # EXERCISE 3: Uncomment to enable Local MCP Demo
-    # ================================================================
-    await demo_local_mcp()
+    exit_app = await demo_local_mcp()
 ```
 
-### Verify
+### Step 3.3: Verify
 
 Run the agent client:
 ```bash
@@ -311,200 +297,39 @@ cd lab2-mcp/begin
 python -m mcp_agent_client.main
 ```
 
-When the menu appears, select **1. Local MCP Server**.
+When the menu appears, select **1. Local MCP Server Demo**.
 
 **Expected output:**
 ```
 ============================================================
-Demo: Local MCP Server (STDIO)
+       Demo: Local MCP Server (STDIO Transport)
 ============================================================
 
-Available tools:
-  - GetConfig: Gets a configuration value by key
-  - UpdateConfig: Updates a configuration value
-  - GetTicket: Gets a support ticket by ID
-  - UpdateTicket: Updates a support ticket status
+Connecting to Local Python MCP Server...
+Connected to Local Python MCP Server
 
-Calling GetConfig('theme')...
-Result: Configuration 'theme' = 'dark'
+Available tools (3):
+   - GetAllTickets: Gets all support tickets with optional limit
+   - GetTicket: Gets a support ticket by ID
+   - UpdateTicket: Updates a support ticket status
 
-Calling UpdateConfig('theme', 'light')...
-Result: Configuration 'theme' updated to 'light'
+Authentication: API Key (Azure OpenAI)
+Starting interactive session with Local Python MCP
 
-Calling GetTicket('TICKET-001')...
-Result: {
-  "id": "TICKET-001",
-  "title": "Login issue",
-  "status": "Open",
-  "description": "Cannot login to the system"
-}
+You: Get all tickets
+Agent: Here are the current support tickets: ...
+
+You: What is the status of TICKET-001?
+Agent: TICKET-001 "Login issue" is currently Open.
+
+You: Update TICKET-002 status to Resolved
+Agent: TICKET-002 has been updated to Resolved.
 ```
 
 **Common Errors:**
 - `ModuleNotFoundError: No module named 'mcp_local_server'` → You're not in the correct directory (should be in `lab2-mcp/begin`)
 - Connection hangs or times out → Exercise 2 server code has syntax errors or wasn't uncommented properly
-
----
-
-## Exercise 4: Connect to Remote MCP Server (HTTP/SSE)
-
-**Objective:** Connect to an MCP server that communicates via HTTP/SSE and calls a REST API backend.
-
-### Current State
-❌ The `demo_remote_mcp()` function is **commented out** (around line 167).
-❌ The function call in `main()` is also **commented out** (around line 298).
-
-### Prerequisites
-
-⚠️ Before running Exercise 4, you must start two backend servers in **separate terminals**:
-
-**Terminal 1 - Start REST API Server:**
-```bash
-cd labs/python/lab2-mcp/begin
-python -m mcp_remote_server.main
-```
-
-Keep this running. You should see:
-```
-Starting REST API server on http://localhost:5060
-```
-
-**Terminal 2 - Start MCP Bridge Server:**
-```bash
-cd labs/python/lab2-mcp/begin
-python -m mcp_bridge.main
-```
-
-Keep this running. You should see:
-```
-Starting MCP Bridge with SSE on http://localhost:5070
-```
-
-### Step 4.1: Uncomment the demo_remote_mcp function
-
-Open `mcp_agent_client/main.py` and find **EXERCISE 4** (around line 167).
-
-**Uncomment the entire `demo_remote_mcp()` function** - it should be about 40 lines of code from line 167 to line 202, including:
-- STEP 4.1: Define SSE endpoint URL
-- STEP 4.2: Connect using sse_client
-- STEP 4.3: Initialize the session
-- STEP 4.4: List available tools
-- STEP 4.5: Call GetTicket and UpdateTicket tools via REST API
-- Error handling for connection issues
-
-### Step 4.2: Enable the Remote MCP Demo
-
-In the `main()` function (around line 298), find this section:
-```python
-elif choice == "2":
-    # ================================================================
-    # EXERCISE 4: Uncomment to enable Remote MCP Demo
-    # ================================================================
-    # await demo_remote_mcp()
-    print("Exercise 4 not completed. Please uncomment the demo_remote_mcp function and call.")
-```
-
-**Uncomment** the function call and **delete** the print statement:
-```python
-elif choice == "2":
-    # ================================================================
-    # EXERCISE 4: Uncomment to enable Remote MCP Demo
-    # ================================================================
-    await demo_remote_mcp()
-```
-
-### Verify
-
-**Make sure both backend servers from Prerequisites are still running!**
-
-In a **third terminal**, run the agent client:
-```bash
-cd labs/python/lab2-mcp/begin
-python -m mcp_agent_client.main
-```
-
-When the menu appears, select **2. Remote MCP Server**.
-
-**Expected output:**
-```
-============================================================
-Demo: Remote MCP Server (HTTP/SSE → REST API)
-============================================================
-
-Connecting to http://localhost:5070/sse...
-
-Available tools:
-  - GetTicket: Gets a support ticket by ID (via REST API)
-  - UpdateTicket: Updates a support ticket status (via REST API)
-
-Calling GetTicket('TICKET-001') via REST API...
-Result: {
-  "id": "TICKET-001",
-  "title": "Login issue",
-  "status": "Open"
-}
-
-Calling UpdateTicket('TICKET-001', 'Resolved') via REST API...
-Result: Ticket 'TICKET-001' status updated to 'Resolved'
-```
-
-**Common Errors:**
-- `Error: Connection refused` → Backend servers (Terminal 1 & 2) are not running
-- `Error: Make sure the MCP Bridge (port 5070) and REST API (port 5060) are running` → Check both servers are running and ports are not blocked
-
----
-
-## Bonus Exercise: AI Agent with MCP Tools
-
-**Objective:** Use MCP tools with Azure OpenAI to create an intelligent agent.
-
-### Current State
-❌ The `demo_with_ai_agent()` function is **commented out** (around line 207).
-❌ The function call in `main()` is also **commented out** (around line 305).
-
-### Prerequisites
-✅ Exercise 1 completed (Azure OpenAI configured)
-✅ Exercise 2 completed (Local MCP server working)
-
-### Step: Enable the AI Agent Demo
-
-Open `mcp_agent_client/main.py`:
-
-1. Find and **uncomment the entire `demo_with_ai_agent()` function** (around line 207, spans about 60 lines)
-   - This includes creating the OpenAI client, connecting to local MCP, converting tools to OpenAI format, and running a demo query
-
-2. In the `main()` function (around line 305), find this section and **uncomment** the function call:
-
-```python
-elif choice == "3":
-    # ================================================================
-    # BONUS: Uncomment to enable AI Agent Demo
-    # ================================================================
-    await demo_with_ai_agent()
-```
-
-### Verify
-
-Run the agent and select **3. AI Agent with MCP Tools**:
-
-```bash
-cd lab2-mcp/begin
-python -m mcp_agent_client.main
-```
-
-**Expected output:**
-```
-============================================================
-Demo: AI Agent with MCP Tools
-============================================================
-
-User: What is the current theme configuration?
-
-AI calling tool: GetConfig
-Tool result: Configuration 'theme' = 'light'
-```
-
-The AI will automatically choose which MCP tools to use based on your query!
+- `Could not create Azure AI client` → Exercise 1 not completed (check .env file)
 
 ---
 
@@ -517,36 +342,272 @@ labs/python/lab2-mcp/solution/
 
 ---
 
+## Exercise 4: Create the REST API Backend
+
+**Objective:** Build a FastAPI REST API that manages ticket data. This API will serve as the backend that the MCP Bridge wraps in Exercise 5.
+
+### Current State
+❌ All endpoint code in `mcp_remote_server/main.py` is **commented out** - you need to uncomment it.
+
+⚠️ **IMPORTANT:** Exercise 5 (MCP Bridge) and Exercise 6 (Remote MCP demo) **require** Exercise 4 to be completed first.
+
+### Step 4.1: Define the Pydantic models
+
+Open `mcp_remote_server/main.py` and find **STEP 4.1**.
+
+**Uncomment** the two model classes:
+```python
+class Ticket(BaseModel):
+    id: str
+    customerId: str | None = None
+    customerName: str | None = None
+    subject: str | None = None
+    description: str
+    status: str
+    priority: str | None = None
+    assignedTo: str | None = None
+
+
+class TicketUpdate(BaseModel):
+    status: str
+```
+
+### Step 4.2: Define the API endpoints
+
+Find **STEP 4.2** and **uncomment all the endpoint functions**:
+- `GET /` - Root endpoint returning API info
+- `GET /api/tickets` - Get all tickets (with `maxResults` query parameter)
+- `GET /api/tickets/{ticket_id}` - Get a specific ticket
+- `PUT /api/tickets/{ticket_id}` - Update a ticket's status
+
+### Step 4.3: Run the server
+
+Find **STEP 4.3** and **uncomment** the run lines:
+```python
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=5060)
+```
+
+**Then DELETE** the placeholder code below.
+
+### Verify
+
+Start the REST API server:
+```bash
+cd lab2-mcp/begin
+python -m mcp_remote_server.main
+```
+
+**Expected output:**
+```
+Starting REST API Server on http://localhost:5060
+```
+
+Test it in a **new terminal**:
+```bash
+curl http://localhost:5060/api/tickets
+```
+
+You should see a JSON array of tickets. Keep the server running for Exercise 5.
+
+---
+
+## Exercise 5: Create the MCP Bridge (Streamable HTTP)
+
+**Objective:** Build an MCP server that uses Streamable HTTP transport to expose tools that forward calls to the REST API backend.
+
+### Current State
+❌ All code in `mcp_bridge/main.py` is **commented out** - you need to uncomment it.
+
+### Prerequisites
+⚠️ **Exercise 4 must be completed first** - the REST API must be running.
+
+### Architecture
+```
+Agent Client -> MCP Bridge (:5070/mcp) -> REST API (:5060/api/...)
+                Streamable HTTP            HTTP/JSON
+```
+
+### Step 5.1: Create the MCP server instance
+
+Open `mcp_bridge/main.py` and find **STEP 5.1**.
+
+**Uncomment** this line:
+```python
+mcp = Server("mcp-bridge")
+```
+
+### Step 5.2: Define the list_tools handler
+
+Find **STEP 5.2** and **uncomment the entire function**. It defines 3 tools:
+- `GetAllTickets` - Forwards to `GET /api/tickets`
+- `GetTicket` - Forwards to `GET /api/tickets/{id}`
+- `UpdateTicket` - Forwards to `PUT /api/tickets/{id}`
+
+### Step 5.3: Define the call_tool handler
+
+Find **STEP 5.3** and **uncomment the entire function**.
+
+This handler uses `httpx.AsyncClient` to forward each tool call to the corresponding REST API endpoint.
+
+### Step 5.4: Set up the Streamable HTTP transport
+
+Find **STEP 5.4** and **uncomment all the code**. This includes:
+- `ensure_server_running()` - Creates the `StreamableHTTPServerTransport` and starts the MCP server
+- `handle_mcp()` - Routes `/mcp` requests to the transport
+- `app()` - Main ASGI application with routing for `/mcp`, `/`, and `/health`
+
+### Step 5.5: Run the server
+
+Find **STEP 5.5** and **uncomment** the run block. **Delete** the placeholder code.
+
+### Verify
+
+**Make sure the REST API from Exercise 4 is still running on port 5060!**
+
+In a **new terminal**, start the MCP Bridge:
+```bash
+cd lab2-mcp/begin
+python -m mcp_bridge.main
+```
+
+**Expected output:**
+```
+============================================================
+       MCP Bridge Server (Streamable HTTP Transport)
+============================================================
+  Server URL:   http://localhost:5070
+  MCP Endpoint: http://localhost:5070/mcp
+  Health Check: http://localhost:5070/health
+
+  Available MCP Tools:
+     - GetAllTickets
+     - GetTicket
+     - UpdateTicket
+```
+
+Test the health endpoint:
+```bash
+curl http://localhost:5070/health
+```
+
+Keep both servers running for Exercise 6.
+
+---
+
+## Exercise 6: Connect to Remote MCP Server
+
+**Objective:** Enable the AI Agent client to connect to the remote MCP Bridge via Streamable HTTP and use its tools interactively.
+
+### Current State
+❌ The `demo_remote_mcp()` function is **COMMENTED OUT** in `mcp_agent_client/main.py`
+❌ The function call in `main()` is also **commented out**
+
+### Prerequisites
+⚠️ **You must complete Exercises 1, 4, and 5 first:**
+- Exercise 1: Azure OpenAI must be configured
+- Exercise 4: REST API must be running on port 5060
+- Exercise 5: MCP Bridge must be running on port 5070
+
+### Step 6.1: Uncomment the demo_remote_mcp function
+
+Open `mcp_agent_client/main.py` and find **EXERCISE 6**.
+
+**Uncomment the entire `demo_remote_mcp()` function**, which includes:
+- **STEP 6.1:** Connect using `streamablehttp_client` to `http://localhost:5070/mcp`
+- **STEP 6.2:** Initialize the MCP session
+- **STEP 6.3:** List available tools from the bridge
+- **STEP 6.4:** Create AI client and run interactive session
+
+### Step 6.2: Enable the Remote MCP Demo in main()
+
+In the `main()` function, find the menu handler for choice `"2"`:
+
+```python
+elif choice == "2":
+    # ===========================================================
+    # EXERCISE 6: Uncomment to enable Remote MCP Demo
+    # ===========================================================
+    # exit_app = await demo_remote_mcp()
+    print("Exercise 6 not completed...")
+```
+
+**Uncomment** the function call and **delete** the print statement.
+
+### Step 6.3: Verify
+
+**Make sure both backend servers are still running!**
+- Terminal 1: REST API on port 5060
+- Terminal 2: MCP Bridge on port 5070
+
+In a **third terminal**, run the agent client:
+```bash
+cd lab2-mcp/begin
+python -m mcp_agent_client.main
+```
+
+When the menu appears, select **2. Remote MCP Server Demo**.
+
+**Expected output:**
+```
+============================================================
+      Demo: Remote MCP Bridge (Streamable HTTP -> REST API)
+============================================================
+
+Architecture:
+   AgentClient -> MCP Bridge (:5070) -> REST API (:5060)
+
+Connecting to MCP Bridge at http://localhost:5070/mcp...
+Connected to MCP Bridge
+
+Available tools (3):
+   - GetAllTickets: Gets all support tickets from the REST API
+   - GetTicket: Gets a support ticket by ID from the REST API
+   - UpdateTicket: Updates a support ticket status via the REST API
+
+You: Get all tickets
+Agent: Here are the tickets from the REST API: ...
+```
+
+**Common Errors:**
+- `Error: Connection refused` → Backend servers (port 5060 and 5070) are not running
+- `Make sure the MCP Bridge and REST API are running` → Start both servers first
+
+---
+
 ## Summary
 
 Congratulations! You've learned how to:
 
 | Exercise | Concept | Status in Begin Folder |
 |----------|---------|----------------------|
-| 1 | Configure Azure OpenAI with standard .env file | ⚠️ dotenv loading implemented, config code needs uncommenting |
-| 2 | Create an MCP server with STDIO transport | ❌ All code needs uncommenting |
-| 3 | Connect to local MCP servers via STDIO | ❌ All code needs uncommenting |
-| 4 | Connect to remote MCP servers via HTTP/SSE | ❌ All code needs uncommenting |
-| Bonus | Use MCP tools with Azure OpenAI | ❌ All code needs uncommenting |
+| 1 | Configure Azure OpenAI with JSON .env file | ⚠️ env loading implemented, config code needs uncommenting |
+| 2 | Create a Local MCP server with STDIO transport | ❌ All code needs uncommenting |
+| 3 | Connect AI Agent to local MCP server | ❌ All code needs uncommenting |
+| 4 | Create REST API backend (FastAPI) | ❌ All code needs uncommenting |
+| 5 | Create MCP Bridge with Streamable HTTP transport | ❌ All code needs uncommenting |
+| 6 | Connect AI Agent to remote MCP server | ❌ All code needs uncommenting |
 
 ### Key Takeaways
 
 - **MCP** standardizes how AI agents connect to tools
-- **STDIO transport** is used for local subprocess communication (Exercise 3)
-- **HTTP/SSE transport** is used for remote server communication (Exercise 4)
-- **Environment configuration** uses standard python-dotenv library with KEY=VALUE format
+- **STDIO transport** is used for local subprocess communication
+- **Streamable HTTP transport** is used for remote server communication
 - **Tool handlers** are defined using `@server.list_tools()` and `@server.call_tool()` decorators
 - **Tool schemas** help the LLM understand when and how to use each tool
-- **Hybrid authentication** supports both API key (recommended) and Azure CLI credentials
+- The AI agent dynamically **discovers tools** from the MCP server at runtime
+- **Interactive chat sessions** let the AI choose which tools to call based on user queries
+- **MCP Bridge pattern** wraps existing REST APIs without modifying the backend
 
 ### Architecture Flow
 
 ```
 Exercise 3 (Local):
-AI Agent Client → STDIO → Local MCP Server → In-Memory Data
+AI Agent Client → STDIO → Local MCP Server → In-Memory Ticket Data
 
-Exercise 4 (Remote):
-AI Agent Client → HTTP/SSE → MCP Bridge → REST API → In-Memory Data
+Exercise 6 (Remote):
+AI Agent Client → Streamable HTTP → MCP Bridge (:5070) → REST API (:5060) → Ticket Data
 ```
 
 ---
@@ -554,56 +615,53 @@ AI Agent Client → HTTP/SSE → MCP Bridge → REST API → In-Memory Data
 ## Troubleshooting
 
 ### .env File Not Found
-**Error:** `Warning: .env file not found at ...`
+**Error:** `No .env file found or failed to load`
 
-**Solution:** Create the `.env` file at `labs/python/.env` in standard dotenv format:
-```bash
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4o-mini
-AZURE_OPENAI_API_KEY=your-api-key
+**Solution:** Create the `.env` file at `labs/python/.env` in JSON format:
+```json
+{
+    "AZURE_OPENAI_ENDPOINT": "https://your-resource.openai.azure.com/",
+    "AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-4o-mini",
+    "AZURE_OPENAI_API_KEY": "your-api-key"
+}
 ```
-
-### Environment Variable Not Set
-**Error:** `ValueError: AZURE_OPENAI_ENDPOINT environment variable is not set`
-
-**Solution:** 
-1. Check `.env` file exists at `labs/python/.env`
-2. Verify the format is `KEY=VALUE` (no quotes needed unless value has spaces)
-3. Make sure variable names are correct (case-sensitive)
 
 ### Azure Tenant Mismatch
 **Error:** `Token tenant does not match resource tenant`
 
-**Solution:** Add `AZURE_OPENAI_API_KEY` to your .env file - the updated code will use API key authentication instead of Azure CLI
+**Solution:** Add `AZURE_OPENAI_API_KEY` to your .env file - the code will use API key authentication instead of Azure CLI
 
 ### Module Not Found
 **Error:** `ModuleNotFoundError: No module named 'mcp_local_server'`
 
-**Solution:** 
+**Solution:**
 1. Make sure you're in the correct directory: `labs/python/lab2-mcp/begin`
 2. Run commands with `python -m module_name.main` format
 
-### Connection Refused (Exercise 4)
-**Error:** `Error: Connection refused` or timeout
+### MCP Server Connection Issues
+**Error:** Connection hangs, times out, or shows subprocess errors
 
 **Solution:**
-1. Verify Terminal 1 shows: `Starting REST API server on http://localhost:5060`
-2. Verify Terminal 2 shows: `Starting MCP Bridge with SSE on http://localhost:5070`
+1. Verify Exercise 2 is fully completed (all steps uncommented)
+2. Check for syntax errors: `python -m py_compile mcp_local_server/main.py`
+3. Ensure `assets/tickets.json` exists in the workspace
+
+### Connection Refused (Exercises 5/6)
+**Error:** `Error: Connection refused` or timeout when connecting to remote MCP
+
+**Solution:**
+1. Verify the REST API is running: `curl http://localhost:5060/`
+2. Verify the MCP Bridge is running: `curl http://localhost:5070/health`
 3. Check firewalls are not blocking ports 5060 and 5070
+4. Ensure both servers completed without syntax errors
 
 ---
 
 ## Next Steps
 
-- Explore creating custom MCP tools for your use cases
-- Add authentication to remote MCP servers
-- Implement resource providers (prompts, context)
-- Integrate MCP with your existing applications
+After completing this lab:
+- Add more tools to the local server (e.g., CreateTicket, DeleteTicket)
+- Add authentication to the MCP Bridge
+- Connect your agent to multiple MCP servers simultaneously
 - Review the MCP specification at [modelcontextprotocol.io](https://modelcontextprotocol.io)
-
-## Questions?
-
-If you encounter issues not covered in this guide:
-1. Check the solution folder for working code: `labs/python/lab2-mcp/solution/`
-2. Review the `mcp-concepts.ipynb` notebook for conceptual understanding
-3. Verify all prerequisites are met (Python version, dependencies, Azure OpenAI access)
+- Try Lab 2 - Workflow for agent orchestration patterns

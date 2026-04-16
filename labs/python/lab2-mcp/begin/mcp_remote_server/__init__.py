@@ -1,1 +1,1 @@
-# MCP Remote Server - REST API backend (FastAPI)
+"""MCP Remote Server package."""

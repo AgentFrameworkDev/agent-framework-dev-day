@@ -3,64 +3,104 @@ MCP Remote Server - REST API backend using FastAPI.
 
 This is a pure REST API server (no MCP). The MCP Bridge calls this API.
 
-NOTE: This file is pre-completed for the lab exercises.
-It provides the REST API backend that the MCP Bridge wraps.
+============================================================================
+EXERCISE 4: Create the REST API Backend
+============================================================================
+In this exercise, you will set up a FastAPI REST API that serves as the
+backend data source. The MCP Bridge (Exercise 5) will wrap this API.
+
+TODO: Uncomment the code below step by step as instructed in EXERCISES.md
+============================================================================
 """
-from fastapi import FastAPI, HTTPException
+import json
+from pathlib import Path
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 
 app = FastAPI(title="MCP Remote Server - REST API")
 
-# In-memory ticket storage
-tickets: dict[str, dict] = {
-    "TICKET-001": {"id": "TICKET-001", "title": "Login issue", "status": "Open", "description": "Cannot login to the system"},
-    "TICKET-002": {"id": "TICKET-002", "title": "Performance problem", "status": "In Progress", "description": "System is running slowly"},
-    "TICKET-003": {"id": "TICKET-003", "title": "Data sync error", "status": "Open", "description": "Data not syncing properly"},
-}
+
+def load_tickets() -> dict[str, dict]:
+    """Load tickets by traversing up directories to find assets/tickets.json."""
+    current = Path(__file__).resolve().parent
+    while current != current.parent:
+        data_file = current / "assets" / "tickets.json"
+        if data_file.exists():
+            print(f"Found tickets at: {data_file}")
+            with open(data_file, "r") as f:
+                ticket_list = json.load(f)
+                print(f"Loaded {len(ticket_list)} tickets")
+                return {t["id"]: t for t in ticket_list}
+        current = current.parent
+    print("Warning: assets/tickets.json not found")
+    return {}
 
 
-class Ticket(BaseModel):
-    id: str
-    title: str
-    status: str
-    description: str
+# In-memory ticket storage loaded from shared JSON file
+tickets: dict[str, dict] = load_tickets()
 
 
-class TicketUpdate(BaseModel):
-    status: str
+# ============================================================================
+# STEP 4.1: Define the Pydantic models
+# Uncomment the classes below
+# ============================================================================
+# class Ticket(BaseModel):
+#     id: str
+#     customerId: str | None = None
+#     customerName: str | None = None
+#     subject: str | None = None
+#     description: str
+#     status: str
+#     priority: str | None = None
+#     assignedTo: str | None = None
+#
+#
+# class TicketUpdate(BaseModel):
+#     status: str
 
 
-@app.get("/")
-async def root():
-    return {"message": "MCP Remote Server - REST API", "endpoints": ["/api/tickets", "/api/tickets/{id}"]}
+# ============================================================================
+# STEP 4.2: Define the API endpoints
+# Uncomment all the endpoint functions below
+# ============================================================================
+# @app.get("/")
+# async def root():
+#     return {"message": "MCP Remote Server - REST API", "endpoints": ["/api/tickets", "/api/tickets/{id}"]}
+#
+#
+# @app.get("/api/tickets")
+# async def get_all_tickets(request: Request, maxResults: int = 5) -> list[Ticket]:
+#     """Get all tickets."""
+#     all_tickets = [Ticket(**t) for t in tickets.values()]
+#     return all_tickets[:maxResults]
+#
+#
+# @app.get("/api/tickets/{ticket_id}")
+# async def get_ticket(ticket_id: str, request: Request) -> Ticket:
+#     """Get a specific ticket by ID."""
+#     if ticket_id not in tickets:
+#         raise HTTPException(status_code=404, detail=f"Ticket '{ticket_id}' not found")
+#     return Ticket(**tickets[ticket_id])
+#
+#
+# @app.put("/api/tickets/{ticket_id}")
+# async def update_ticket(ticket_id: str, update: TicketUpdate, request: Request) -> Ticket:
+#     """Update a ticket's status."""
+#     if ticket_id not in tickets:
+#         raise HTTPException(status_code=404, detail=f"Ticket '{ticket_id}' not found")
+#
+#     tickets[ticket_id]["status"] = update.status
+#     return Ticket(**tickets[ticket_id])
 
 
-@app.get("/api/tickets")
-async def get_all_tickets() -> list[Ticket]:
-    """Get all tickets."""
-    return [Ticket(**t) for t in tickets.values()]
+# ============================================================================
+# STEP 4.3: Run the server
+# Uncomment the lines below and REMOVE the placeholder code
+# ============================================================================
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=5060)
 
-
-@app.get("/api/tickets/{ticket_id}")
-async def get_ticket(ticket_id: str) -> Ticket:
-    """Get a specific ticket by ID."""
-    if ticket_id not in tickets:
-        raise HTTPException(status_code=404, detail=f"Ticket '{ticket_id}' not found")
-    return Ticket(**tickets[ticket_id])
-
-
-@app.put("/api/tickets/{ticket_id}")
-async def update_ticket(ticket_id: str, update: TicketUpdate) -> Ticket:
-    """Update a ticket's status."""
-    if ticket_id not in tickets:
-        raise HTTPException(status_code=404, detail=f"Ticket '{ticket_id}' not found")
-    
-    tickets[ticket_id]["status"] = update.status
-    return Ticket(**tickets[ticket_id])
-
-
+# Placeholder - REMOVE after uncommenting above
 if __name__ == "__main__":
-    import uvicorn
-    print("Starting REST API Server on http://localhost:5060")
-    print("Endpoints: /api/tickets, /api/tickets/{id}")
-    uvicorn.run(app, host="0.0.0.0", port=5060)
+    print("Exercise 4 not completed. Please uncomment the code above.")
