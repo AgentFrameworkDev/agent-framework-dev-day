@@ -15,8 +15,6 @@
 ## Setup your development environment
 I assume you have already gone through the notebooks, so your virtual environment should already have the dependencies installed.
 
-// Jason TODO: for after Jan 16, 2026 workshop -> specify needed settings
-
 However, we need to make sure you are setup to use the terminal with the virtual enviornment.
 
 1. Open a new Terminal
@@ -34,8 +32,6 @@ source .venv/bin/activate
 
 ## Configure the Azure resources
 I assume you have already gone through the notebooks, so your .env file should contain all the necessary resource settings.
-
-// Jason TODO: for after Jan 16, 2026 workshop -> specify needed settings
 
 ## Overview of the starter code
 
@@ -56,12 +52,12 @@ In order for this workshop to be more challenging than my past RAG workshops, I 
 
 - **[semantic_search_agent.py](./agents/semantic_search_agent.py)**: Uses a tool-wrapped semantic search function to fetch tickets (top 10) and build evidence-rich responses.
 
-**[workflow_handlers.py](./workflows/workflow_handlers.py)**: Helpers to drain async workflow event streams, print agent responses, and surface pending user input requests during handoffs.
+**[workflow_handlers.py](./workflows/workflow_handlers.py)**: Helpers to print agent messages.
 
 ### Architecture at a Glance
 
 #### Pattern: 
-Handoff orchestration — classifier coordinates, specialists handle work; easy to add more agents later (count, yes/no, difference, intersection, multi-hop, comparative).
+Classifier and Specialists — classifier coordinates, specialists handle work; easy to add more agents later (count, yes/no, difference, intersection, multi-hop, comparative).
 
 #### Data flow:
 User question → classifier routes → specialist agent tool calls SearchService → results returned to agent → response streamed back via workflow events.
@@ -85,10 +81,10 @@ Using the Azure AI Search index that is preloaded with the [Customer IT Support 
 - Which Dell XPS issue does not mention Windows? (Difference)
 - What department had consultants with Login Issues? (Multi-hop)
 
-I'll provide the stpes to create and add the agents to answer the Yes/No and Count question types, and then describe the ideas for you to create the others on your own.
+I'll provide the steps to create and add the agents to answer the Yes/No and Count question types, and then describe the ideas for you to create the others on your own.
 
 ### Bonus Challenge
-Add a date field and populate it with sample data so you can answer these questions
+Use the create date field and populate it with sample data so you can answer these questions
 - What was the last ticket entered for Human Resources? (Ordinal)
 - What is the oldest high priority ticket? (Superlative)
 

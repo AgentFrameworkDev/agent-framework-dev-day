@@ -14,7 +14,7 @@ As mentioned in the presentation, RAG applications are often easy to get started
 
 ## Learning Objectives
 - Create an application that uses the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework)
-- Utilize the [Handoff](https://learn.microsoft.com/en-us/agent-framework/user-guide/workflows/orchestrations/handoff?pivots=programming-language-python) workflow orchestration
+- Utilize workflow orchestration and structured responses
 - Write specialized agents that perform specific search capabilities with [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search/)
 
 ## Prerequisites
