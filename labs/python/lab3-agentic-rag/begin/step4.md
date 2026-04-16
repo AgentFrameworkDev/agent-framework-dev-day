@@ -33,14 +33,8 @@ In our dataset some count questions could be:
 
 The following is the portion of the classifier prompt important for the Comparative Agent:
 ```text
-**COMPARATIVE_AGENT**: Questions comparing multiple items (more/less, vs, or)
-   - **Keywords**: "more", "less", "vs", "versus", "or", "compared to", "better", "worse"
-   - **Pattern**: "Do we have more [ITEM_A] or [ITEM_B]?" or "Which has more: [A] or [B]?"
-   - Examples:
-     - "Do we have more issues with MacBook Air computers or Dell XPS laptops?" ✓ COMPARATIVE_AGENT
-     - "Which has more tickets: Surface Pro or iPad?" ✓ COMPARATIVE_AGENT
-     - "Are there more incidents for HR or IT?" ✓ COMPARATIVE_AGENT
-     - "Surface vs Dell: which has more problems?" ✓ COMPARATIVE_AGENT
+**comparative**: Questions comparing multiple items ("more", "less", "vs", "or").
+  - "Do we have more issues with MacBook Air or Dell XPS?" -> comparative
 ```
 
 ### Steps the agent logic will need to take
@@ -99,18 +93,9 @@ In our dataset some count questions could be:
 
 The following is the portion of the classifier prompt important for the Difference Agent:
 ```text
-**DIFFERENCE_AGENT**: Questions asking for items that match one criterion but EXCLUDE/NOT another
-   - **CRITICAL**: Look for negation words combined with "which", "what", "find", "show", "list"
-   - **Negation indicators**: "not", "don't", "doesn't", "without", "excluding", "except", "no", "never"
-   - **Exclusion phrases**: "does not mention", "does not involve", "don't mention", "don't involve", "not related to", "not about"
-   - **Pattern**: [Which/What/Find] [TOPIC] [NEGATION] [EXCLUSION_TERM]
-   - Examples:
-     - "Which Dell XPS Issue does not mention Windows?" ✓ DIFFERENCE_AGENT
-     - "What Surface problems don't involve the battery?" ✓ DIFFERENCE_AGENT
-     - "Find tickets without high priority" ✓ DIFFERENCE_AGENT
-     - "Issues that don't mention password" ✓ DIFFERENCE_AGENT
-     - "Show me incidents not related to network" ✓ DIFFERENCE_AGENT
-     - "Which problems exclude security?" ✓ DIFFERENCE_AGENT
+**difference**: Questions with negation/exclusion ("not", "don't", "without", "excluding").
+  - "Which Dell XPS Issue does not mention Windows?" -> difference
+  - "Find tickets without high priority" -> difference
 ```
 
 ### Steps the agent logic will need to take
@@ -178,15 +163,9 @@ In our dataset some count questions could be:
 
 The following is the portion of the classifier prompt important for the Intersection Agent:
 ```text
-**INTERSECTION_AGENT**: Questions asking for items that match MULTIPLE criteria (AND logic)
-   - **Only use when "and" combines SEARCH TOPICS, not database field filters**
-   - Keywords: "and", "both", "that also", "with", "plus", "as well as"
-   - Pattern: [What/Which/Find] [SEARCH_TOPIC_A] [AND] [SEARCH_TOPIC_B]
-   - Examples:
-     - "What issues are for Dell XPS laptops and the user tried Win + Ctrl + Shift + B?" ✓ INTERSECTION_AGENT (two search topics: "Dell XPS" AND "Win+Ctrl+Shift+B")
-     - "Which Surface tickets involve battery problems and high priority?" ✗ NOT INTERSECTION - "high priority" is a Priority field filter
-     - "Find incidents for HR and also mention password reset" ✓ INTERSECTION_AGENT (search for "HR incidents" AND "password reset")
-     - "Show tickets with network issues that also have high priority" ✗ NOT INTERSECTION - "high priority" is a filter
+**intersection**: Questions combining multiple SEARCH TOPICS with "and", "both", "that also".
+  - "What issues are for Dell XPS laptops and the user tried Win + Ctrl + Shift + B?" -> intersection
+  - NOT when "and" combines field filters like Priority/Queue/Type.
 ```
 
 ### Steps the agent logic will need to take
@@ -262,14 +241,9 @@ In our dataset some count questions could be:
 
 The following is the portion of the classifier prompt important for the Intersection Agent:
 ```text
-**MULTI_HOP_AGENT**: Questions requiring multi-step reasoning (find X, then extract Y from X)
-   - **Pattern**: "What [FIELD] had/has [CONDITION]?" or "Which [FIELD] [CONDITION]?"
-   - **Indicators**: Questions asking for a different attribute than what's being searched
-   - Examples:
-     - "What department had consultants with Login Issues?" ✓ MULTI_HOP_AGENT (search for consultant login issues, extract department)
-     - "Which priority level has the most printer problems?" ✓ MULTI_HOP_AGENT (search printer problems, extract priority)
-     - "What ticket type do Surface issues get classified as?" ✓ MULTI_HOP_AGENT (search Surface issues, extract type)
-     - "Which queue handles password reset requests?" ✓ MULTI_HOP_AGENT (search password reset, extract queue)
+**multi_hop**: Questions asking for a different attribute than what's searched (find X, extract Y).
+  - "What department had consultants with Login Issues?" -> multi_hop
+  - "Which queue handles password reset requests?" -> multi_hop
 ```
 
 ### Steps the agent logic will need to take
