@@ -1,8 +1,8 @@
 """
 Classifier agent for routing queries to specialized search agents.
 """
-from agent_framework import ChatAgent
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent
+from agent_framework.openai import OpenAIChatClient
 
 
 CLASSIFIER_AGENT_INSTRUCTIONS = """
@@ -113,7 +113,7 @@ COUNTING first**: If question has "how many", "count", "total", "number of" → 
 """
 
 
-def create_classifier_agent(chat_client: AzureOpenAIChatClient) -> ChatAgent:
+def create_classifier_agent(chat_client: OpenAIChatClient) -> Agent:
     """
     Create the classifier agent that routes queries to specialists.
     
@@ -121,9 +121,10 @@ def create_classifier_agent(chat_client: AzureOpenAIChatClient) -> ChatAgent:
         chat_client: Azure OpenAI chat client
         
     Returns:
-        Configured classifier ChatAgent
+        Configured classifier Agent
     """
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=CLASSIFIER_AGENT_INSTRUCTIONS,
         name="classifier_agent",
+        require_per_service_call_history_persistence=True,
     )

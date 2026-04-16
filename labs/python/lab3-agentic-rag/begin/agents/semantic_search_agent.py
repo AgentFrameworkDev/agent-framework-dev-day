@@ -112,7 +112,7 @@ def create_semantic_search_agent(
     # Create the AI function with the search service
     semantic_search_fn = create_semantic_search_function(search_service)
     
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=SEMANTIC_SEARCH_AGENT_INSTRUCTIONS,
         name="semantic_search_agent",
         tools=[semantic_search_fn],

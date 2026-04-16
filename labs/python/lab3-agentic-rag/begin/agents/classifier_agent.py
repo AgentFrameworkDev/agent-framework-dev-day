@@ -124,7 +124,7 @@ def create_classifier_agent(chat_client: AzureOpenAIChatClient) -> ChatAgent:
     Returns:
         Configured classifier ChatAgent
     """
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=CLASSIFIER_AGENT_INSTRUCTIONS,
         name="classifier_agent",
     )

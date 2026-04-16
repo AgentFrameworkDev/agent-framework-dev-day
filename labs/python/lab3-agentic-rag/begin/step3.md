@@ -233,7 +233,7 @@ def create_count_agent(
     # Create the AI function with the search service
     count_search_fn = create_count_search_function(search_service)
     
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=COUNT_AGENT_INSTRUCTIONS,
         name="count_agent",
         tools=[count_search_fn],

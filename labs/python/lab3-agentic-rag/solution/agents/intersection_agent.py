@@ -3,8 +3,8 @@ Intersection agent for answering questions that require items matching multiple 
 """
 import json
 from typing import Annotated
-from agent_framework import ChatAgent, ai_function
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, Message, tool
+from agent_framework.openai import OpenAIChatClient
 
 from services import SearchService
 
@@ -48,7 +48,7 @@ def create_intersection_search_function(search_service: SearchService):
         AI function for intersection searches
     """
     
-    @ai_function
+    @tool
     async def intersection_search(
         user_question: Annotated[str, "User question requiring finding items that match multiple criteria"]
     ) -> str:
@@ -83,7 +83,7 @@ Respond ONLY with the JSON object.
         
         # Call LLM to parse the question
         parse_response = await search_service.chat_client.get_response(
-            messages=parse_prompt
+            [Message(role="user", content=parse_prompt)]
         )
         
         try:
@@ -183,9 +183,9 @@ Base your answer strictly on the search results provided.
 
 
 def create_intersection_agent(
-    chat_client: AzureOpenAIChatClient,
+    chat_client: OpenAIChatClient,
     search_service: SearchService
-) -> ChatAgent:
+) -> Agent:
     """
     Create the intersection specialist agent.
     
@@ -199,8 +199,9 @@ def create_intersection_agent(
     # Create the AI function with the search service
     intersection_search_fn = create_intersection_search_function(search_service)
     
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=INTERSECTION_AGENT_INSTRUCTIONS,
         name="intersection_agent",
         tools=[intersection_search_fn],
+        require_per_service_call_history_persistence=True,
     )

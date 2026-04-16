@@ -3,8 +3,8 @@ Multi-hop agent for answering questions requiring multi-step reasoning.
 """
 import json
 from typing import Annotated
-from agent_framework import ChatAgent, ai_function
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, Message, tool
+from agent_framework.openai import OpenAIChatClient
 
 from services import SearchService
 
@@ -47,7 +47,7 @@ def create_multi_hop_search_function(search_service: SearchService):
         AI function for multi-hop searches
     """
     
-    @ai_function
+    @tool
     async def multi_hop_search(
         user_question: Annotated[str, "User question requiring multi-hop reasoning"]
     ) -> str:
@@ -90,7 +90,7 @@ Respond ONLY with the JSON object.
         # Call LLM to parse the question
         from agent_framework import ChatMessage
         parse_response = await search_service.chat_client.get_response(
-            messages=parse_prompt
+            [Message(role="user", content=parse_prompt)]
         )
         
         try:
@@ -160,9 +160,9 @@ Base your answer strictly on the search results provided.
 
 
 def create_multi_hop_agent(
-    chat_client: AzureOpenAIChatClient,
+    chat_client: OpenAIChatClient,
     search_service: SearchService
-) -> ChatAgent:
+) -> Agent:
     """
     Create the multi-hop reasoning specialist agent.
     
@@ -176,8 +176,9 @@ def create_multi_hop_agent(
     # Create the AI function with the search service
     multi_hop_search_fn = create_multi_hop_search_function(search_service)
     
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=MULTI_HOP_AGENT_INSTRUCTIONS,
         name="multi_hop_agent",
         tools=[multi_hop_search_fn],
+        require_per_service_call_history_persistence=True,
     )

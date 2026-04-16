@@ -3,8 +3,8 @@ Difference agent for answering questions that require finding items in one set b
 """
 import json
 from typing import Annotated
-from agent_framework import ChatAgent, ai_function
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, Message, tool
+from agent_framework.openai import OpenAIChatClient
 
 from services import SearchService
 
@@ -50,7 +50,7 @@ def create_difference_search_function(search_service: SearchService):
         AI function for difference searches
     """
     
-    @ai_function
+    @tool
     async def difference_search(
         user_question: Annotated[str, "User question requiring finding differences between two sets"]
     ) -> str:
@@ -88,7 +88,7 @@ Respond ONLY with the JSON object.
         # Call LLM to parse the question
         from agent_framework import ChatMessage
         parse_response = await search_service.chat_client.get_response(
-            messages=parse_prompt
+            [Message(role="user", content=parse_prompt)]
         )
         
         try:
@@ -173,9 +173,9 @@ Base your answer strictly on the search results provided.
 
 
 def create_difference_agent(
-    chat_client: AzureOpenAIChatClient,
+    chat_client: OpenAIChatClient,
     search_service: SearchService
-) -> ChatAgent:
+) -> Agent:
     """
     Create the difference specialist agent.
     
@@ -189,8 +189,9 @@ def create_difference_agent(
     # Create the AI function with the search service
     difference_search_fn = create_difference_search_function(search_service)
     
-    return chat_client.create_agent(
+    return chat_client.as_agent(
         instructions=DIFFERENCE_AGENT_INSTRUCTIONS,
         name="difference_agent",
         tools=[difference_search_fn],
+        require_per_service_call_history_persistence=True,
     )
