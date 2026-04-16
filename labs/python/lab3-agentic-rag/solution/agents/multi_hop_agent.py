@@ -88,30 +88,37 @@ Respond ONLY with the JSON object.
 """
         
         # Call LLM to parse the question
-        from agent_framework import ChatMessage
-        parse_response = await search_service.chat_client.get_response(
-            [Message(role="user", content=parse_prompt)]
-        )
-        
         try:
-            # Extract JSON from response
-            response_text = parse_response.messages[0].text.strip()
-            # Remove markdown code blocks if present
-            if "```json" in response_text:
-                response_text = response_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0].strip()
-            
-            parsed = json.loads(response_text)
-            search_query = parsed["search_query"]
-            target_field = parsed["target_field"]
-            reasoning = parsed.get("reasoning", "")
-        except Exception as e:
-            return (
-                f"Question: {user_question}\n\n"
-                f"Error: Unable to parse the multi-hop question. Please rephrase your question.\n"
-                f"Details: {str(e)}"
+            parse_response = await search_service.chat_client.get_response(
+                [Message(role="user", contents=parse_prompt)]
             )
+            response_text = parse_response.messages[0].text.strip()
+        except Exception as e:
+            # Fallback: use the question itself as the search query
+            print(f"  [multi_hop_agent] LLM parse failed ({e}), using fallback")
+            search_query = user_question
+            target_field = "relevant field"
+            reasoning = "Direct search using the original question"
+            response_text = None
+
+        if response_text is not None:
+            try:
+                # Remove markdown code blocks if present
+                if "```json" in response_text:
+                    response_text = response_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in response_text:
+                    response_text = response_text.split("```")[1].split("```")[0].strip()
+
+                parsed = json.loads(response_text)
+                search_query = parsed["search_query"]
+                target_field = parsed["target_field"]
+                reasoning = parsed.get("reasoning", "")
+            except Exception as e:
+                return (
+                    f"Question: {user_question}\n\n"
+                    f"Error: Unable to parse the multi-hop question. Please rephrase your question.\n"
+                    f"Details: {str(e)}"
+                )
         
         # Perform the initial search
         search_results = search_service.search_tickets(search_query, top_k=20)

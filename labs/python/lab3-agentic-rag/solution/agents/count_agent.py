@@ -85,7 +85,7 @@ OData filter:
         try:
 
             filter_response = await search_service.chat_client.get_response(
-                [Message(role="user", content=filter_prompt)]
+                [Message(role="user", contents=filter_prompt)]
             )
             odata_filter = filter_response.messages[0].text.strip()
         except Exception as e:

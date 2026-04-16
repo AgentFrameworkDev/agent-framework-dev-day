@@ -98,34 +98,53 @@ Respond ONLY with the JSON object.
 """
         
         # Call LLM to parse the question
-        parse_response = await search_service.chat_client.get_response(
-            [Message(role="user", content=parse_prompt)]
-        )
-        
         try:
-            # Extract JSON from response
-            response_text = parse_response.messages[0].text.strip()
-            # Remove markdown code blocks if present
-            if "```json" in response_text:
-                response_text = response_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0].strip()
-            
-            parsed = json.loads(response_text)
-            item_1 = parsed["item_1"]
-            item_2 = parsed["item_2"]
-            additional_items = parsed.get("additional_items", [])
-            comparison_type = parsed.get("comparison_type", "count")
-            explanation = parsed.get("explanation", "")
-            
-            # Combine all items to compare
-            all_items = [item_1, item_2] + additional_items
-        except Exception as e:
-            return (
-                f"Question: {user_question}\n\n"
-                f"Error: Unable to parse the comparison question. Please rephrase your question.\n"
-                f"Details: {str(e)}"
+            parse_response = await search_service.chat_client.get_response(
+                [Message(role="user", contents=parse_prompt)]
             )
+            response_text = parse_response.messages[0].text.strip()
+        except Exception as e:
+            # Fallback: use simple keyword extraction from the question
+            print(f"  [comparative_agent] LLM parse failed ({e}), using fallback")
+            # Try to extract items from "X or Y" pattern
+            parts = user_question.lower().replace("?", "").split(" or ")
+            if len(parts) >= 2:
+                item_1 = parts[0].split("with")[-1].strip() if "with" in parts[0] else parts[0].strip()
+                item_2 = parts[-1].strip()
+                all_items = [item_1, item_2]
+                comparison_type = "count"
+                explanation = f"Comparing {item_1} vs {item_2}"
+            else:
+                return (
+                    f"Question: {user_question}\n\n"
+                    f"Error: Unable to parse the comparison question.\n"
+                    f"Details: {str(e)}"
+                )
+            response_text = None
+
+        if response_text is not None:
+            try:
+                # Remove markdown code blocks if present
+                if "```json" in response_text:
+                    response_text = response_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in response_text:
+                    response_text = response_text.split("```")[1].split("```")[0].strip()
+
+                parsed = json.loads(response_text)
+                item_1 = parsed["item_1"]
+                item_2 = parsed["item_2"]
+                additional_items = parsed.get("additional_items", [])
+                comparison_type = parsed.get("comparison_type", "count")
+                explanation = parsed.get("explanation", "")
+
+                # Combine all items to compare
+                all_items = [item_1, item_2] + additional_items
+            except Exception as e:
+                return (
+                    f"Question: {user_question}\n\n"
+                    f"Error: Unable to parse the comparison question. Please rephrase your question.\n"
+                    f"Details: {str(e)}"
+                )
         
         # Perform separate searches for each item
         comparison_results = {}

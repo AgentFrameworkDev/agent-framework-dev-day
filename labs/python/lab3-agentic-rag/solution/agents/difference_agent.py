@@ -86,30 +86,50 @@ Respond ONLY with the JSON object.
 """
         
         # Call LLM to parse the question
-        from agent_framework import ChatMessage
-        parse_response = await search_service.chat_client.get_response(
-            [Message(role="user", content=parse_prompt)]
-        )
-        
         try:
-            # Extract JSON from response
-            response_text = parse_response.messages[0].text.strip()
-            # Remove markdown code blocks if present
-            if "```json" in response_text:
-                response_text = response_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0].strip()
-            
-            parsed = json.loads(response_text)
-            main_search = parsed["main_search"]
-            exclusion_term = parsed["exclusion_term"]
-            explanation = parsed.get("explanation", "")
-        except Exception as e:
-            return (
-                f"Question: {user_question}\n\n"
-                f"Error: Unable to parse the difference question. Please rephrase your question.\n"
-                f"Details: {str(e)}"
+            parse_response = await search_service.chat_client.get_response(
+                [Message(role="user", contents=parse_prompt)]
             )
+            response_text = parse_response.messages[0].text.strip()
+        except Exception as e:
+            # Fallback: use simple keyword extraction
+            print(f"  [difference_agent] LLM parse failed ({e}), using fallback")
+            # Try to extract from "X does not mention Y" pattern
+            q_lower = user_question.lower()
+            for neg in ["does not mention", "doesn't mention", "not mention",
+                        "does not involve", "without", "excluding", "not about"]:
+                if neg in q_lower:
+                    parts = q_lower.split(neg, 1)
+                    main_search = parts[0].strip().rstrip("that").strip()
+                    exclusion_term = parts[1].strip().rstrip("?").strip()
+                    explanation = f"Find {main_search}, exclude {exclusion_term}"
+                    break
+            else:
+                return (
+                    f"Question: {user_question}\n\n"
+                    f"Error: Unable to parse the difference question.\n"
+                    f"Details: {str(e)}"
+                )
+            response_text = None
+
+        if response_text is not None:
+            try:
+                # Remove markdown code blocks if present
+                if "```json" in response_text:
+                    response_text = response_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in response_text:
+                    response_text = response_text.split("```")[1].split("```")[0].strip()
+
+                parsed = json.loads(response_text)
+                main_search = parsed["main_search"]
+                exclusion_term = parsed["exclusion_term"]
+                explanation = parsed.get("explanation", "")
+            except Exception as e:
+                return (
+                    f"Question: {user_question}\n\n"
+                    f"Error: Unable to parse the difference question. Please rephrase your question.\n"
+                    f"Details: {str(e)}"
+                )
         
         # Perform first search: get all items matching main criteria
         main_results = search_service.search_tickets(main_search, top_k=20)
