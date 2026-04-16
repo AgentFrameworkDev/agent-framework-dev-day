@@ -82,7 +82,7 @@ public static class SemanticSearchAgent
     {
         var searchFunction = CreateSearchFunction(searchService);
 
-        return chatClient.CreateAIAgent(
+        return chatClient.AsAIAgent(
             instructions: Instructions,
             name: "semantic_search_agent",
             tools: new[] { AIFunctionFactory.Create(searchFunction) }

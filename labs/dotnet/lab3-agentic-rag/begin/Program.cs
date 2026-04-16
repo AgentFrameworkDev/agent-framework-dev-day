@@ -1,27 +1,27 @@
-using Azure;
 using Azure.AI.OpenAI;
 using Azure.Identity;
 using Lab3.Agents;
 using Lab3.Config;
 using Lab3.Services;
+using Lab3.Workflows;
+using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
-using System.Text.Json;
 
 namespace Lab3;
 
 /// <summary>
 /// Agentic RAG application for IT support ticket search.
-/// 
-/// This application uses the Microsoft Agent Framework with a Handoff orchestration
-/// pattern to route user questions to specialized search agents based on query type.
+///
+/// This application uses the Microsoft Agent Framework with a WorkflowBuilder
+/// pattern using structured output, executors, and switch-case routing to
+/// route user questions to specialized search agents based on query type.
 /// </summary>
 class Program
 {
     static async Task Main(string[] args)
     {
-        // Check for interactive mode flag
         if (args.Contains("--interactive") || args.Contains("-i"))
         {
             await InteractiveModeAsync();
@@ -30,6 +30,23 @@ class Program
         {
             await DemoModeAsync();
         }
+    }
+
+    static Workflow BuildWorkflow(Dictionary<string, AIAgent> agents)
+    {
+        // Create executors
+        var classifierExecutor = new ClassifierExecutor(agents["classifier"]);
+        var semanticSearchExecutor = new SpecialistExecutor("SemanticSearch", agents["semantic_search"]);
+
+        // Build workflow with switch-case routing
+        var builder = new WorkflowBuilder(classifierExecutor);
+        builder.AddSwitch(classifierExecutor, sb => sb
+            .AddCase(CategoryConditions.Is("semantickSearch"), semanticSearchExecutor)
+            .WithDefault(semanticSearchExecutor)
+        )
+        .WithOutputFrom(semanticSearchExecutor);
+
+        return builder.Build();
     }
 
     static async Task DemoModeAsync()
@@ -74,38 +91,32 @@ class Program
         var agents = agentFactory.CreateAllAgents();
         Console.WriteLine($"✓ Created {agents.Count} agents: {string.Join(", ", agents.Keys)}");
 
-        // Build workflow with handoff orchestration
+        // Build workflow with switch-case routing
         Console.WriteLine("\n[5/5] Building workflow...");
-        var workflow = AgentWorkflowBuilder.CreateHandoffBuilderWith(agents["classifier"])
-            .WithHandoffs(agents["classifier"], [agents["semantic_search"]])
-            .WithHandoffs([agents["semantic_search"]], agents["classifier"])
-            .Build();
+        var workflow = BuildWorkflow(agents);
         Console.WriteLine("✓ Workflow built successfully");
         
         // Example questions to test
         var testQuestions = new[]
         {
-            "What problems are there with Surface devices?", //  (Simple question) 
-            "Are there any issues for Dell XPS laptops?", // (Yes/No)
-            "How many tickets were logged and Incidents for Human Resources and low priority?", //  (Count)
-            "Do we have more issues with MacBook Air computers or Dell XPS laptops?", // (Comparative)
-            "Which Dell XPS issue does not mention Windows?", // (Difference)
-            "What issues are for Dell XPS laptops and the user tried Win + Ctrl + Shift + B?", // (Intersection)
-            "What department had consultants with Login Issues?",  // (Multi-hop)
+            "What problems are there with Surface devices?",                                  // Semantic search
+            "Are there any issues for Dell XPS laptops?",                                     // Yes/No
+            "How many tickets were logged and Incidents for Human Resources and low priority?", // Count
+            "Do we have more issues with MacBook Air computers or Dell XPS laptops?",          // Comparative
+            "Which Dell XPS issue does not mention Windows?",                                  // Difference
+            "What issues are for Dell XPS laptops and the user tried Win + Ctrl + Shift + B?", // Intersection
+            "What department had consultants with Login Issues?",                              // Multi-hop
         };
 
         Console.WriteLine("\n" + new string('=', 60));
         Console.WriteLine("RUNNING TEST QUERIES");
         Console.WriteLine(new string('=', 60));
 
-        // Display test questions
-        List<ChatMessage> messages = [];
         for (int i = 0; i < testQuestions.Length; i++)
         {
             Console.WriteLine($"\n--- Query {i + 1}/{testQuestions.Length} ---");
             Console.WriteLine($"User: {testQuestions[i]}");
-            messages.Add(new(ChatRole.User, testQuestions[i]));
-            messages.AddRange(await RunWorkflowAsync(workflow, messages));
+            await RunWorkflowAsync(workflow, testQuestions[i]);
             Console.WriteLine();
         }
 
@@ -136,15 +147,11 @@ class Program
         var agentFactory = new AgentFactory(chatClient, searchService);
         var agents = agentFactory.CreateAllAgents();
 
-        var workflow = AgentWorkflowBuilder.CreateHandoffBuilderWith(agents["classifier"])
-            .WithHandoffs(agents["classifier"], [agents["semantic_search"]])
-            .WithHandoffs([agents["semantic_search"]], agents["classifier"])
-            .Build();
+        var workflow = BuildWorkflow(agents);
 
         Console.WriteLine("✓ System ready\n");
 
-        // Interactive loop
-        List<ChatMessage> messages = [];
+        // Interactive loop — each query is stateless
         while (true)
         {
             try
@@ -164,9 +171,7 @@ class Program
                 }
 
                 Console.WriteLine();
-                //Console.WriteLine($"Processing query: {userInput}");
-                messages.Add(new(ChatRole.User, userInput));
-                messages.AddRange(await RunWorkflowAsync(workflow, messages));
+                await RunWorkflowAsync(workflow, userInput);
                 Console.WriteLine();
             }
             catch (Exception ex)
@@ -176,39 +181,18 @@ class Program
         }
     }
 
-    
-    static async Task<List<ChatMessage>> RunWorkflowAsync(Workflow workflow, List<ChatMessage> messages)
+    static async Task RunWorkflowAsync(Workflow workflow, string question)
     {
-        string? lastExecutorId = null;
+        await using StreamingRun run = await InProcessExecution.RunStreamingAsync(
+            workflow, new ChatMessage(ChatRole.User, question));
 
-        await using StreamingRun run = await InProcessExecution.StreamAsync(workflow, messages);
-        await run.TrySendMessageAsync(new TurnToken(emitEvents: true));
         await foreach (WorkflowEvent evt in run.WatchStreamAsync())
         {
-            if (evt is AgentRunUpdateEvent e)
+            if (evt is WorkflowOutputEvent output)
             {
-                if (e.ExecutorId != lastExecutorId)
-                {
-                    lastExecutorId = e.ExecutorId;
-                    Console.WriteLine();
-                    Console.WriteLine(e.ExecutorId);
-                }
-
-                Console.Write(e.Update.Text);
-                if (e.Update.Contents.OfType<FunctionCallContent>().FirstOrDefault() is FunctionCallContent call)
-                {
-                    Console.WriteLine();
-                    Console.WriteLine($"  [Calling function '{call.Name}' with arguments: {JsonSerializer.Serialize(call.Arguments)}]");
-                }
-            }
-            else if (evt is WorkflowOutputEvent output)
-            {
-                Console.WriteLine();
-                return output.As<List<ChatMessage>>()!;
+                Console.WriteLine(output.Data);
             }
         }
-
-        return [];
     }
 
 
@@ -237,7 +221,7 @@ class Program
         // Load configuration from appsettings.json
         var configuration = new ConfigurationBuilder()
             .SetBasePath(basePath)
-            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true) // Optional environment-specific settings
+            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
 
