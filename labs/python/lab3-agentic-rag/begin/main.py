@@ -36,8 +36,19 @@ def build_workflow(agents):
         name: QueryBridge(id=f"{name}_bridge")
         for name in [
             "semantic_search",
+            # TODO: Add bridge names here as you add new specialist agents
+            # "yes_no",
+            # "count",
+            # "difference",
+            # "intersection",
+            # "multi_hop",
+            # "comparative",
         ]
     }
+
+    # A second bridge pointing to semantic_search acts as the catch-all default.
+    # Once you add a real Case for another agent, you can remove this.
+    default_bridge = QueryBridge(id="default_bridge")
 
     builder = (
         WorkflowBuilder(name="agentic_rag_workflow", start_executor=classifier)
@@ -49,7 +60,9 @@ def build_workflow(agents):
                 # Example:
                 # Case(condition=lambda r: isinstance(r, ClassifiedQuery) and r.category == "yes_no",
                 #      target=bridges["yes_no"]),
-                Default(target=bridges["semantic_search"]),
+                Case(condition=lambda r: isinstance(r, ClassifiedQuery) and r.category == "semantic_search",
+                     target=bridges["semantic_search"]),
+                Default(target=default_bridge),
             ],
         )
     )
@@ -57,6 +70,9 @@ def build_workflow(agents):
     # Wire each bridge to its specialist agent
     for name, bridge in bridges.items():
         builder = builder.add_edge(bridge, agents[name])
+
+    # Default bridge also routes to semantic_search as a catch-all
+    builder = builder.add_edge(default_bridge, agents["semantic_search"])
 
     return builder.build()
 
