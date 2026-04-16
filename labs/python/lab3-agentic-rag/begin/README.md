@@ -23,10 +23,10 @@ Please install the software ahead of the workshop:
 - [VS Code](https://code.visualstudio.com/download)
 - [Python 3.13 and PIP](https://www.python.org/downloads/), also recommend installing the [VS Code Python Extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) - this will allow you to debug and step through code later
 - [Git](https://git-scm.com/downloads) and [Github login](https://github.com) - these will make working with the workshop easier on you
-- [Azure subscription](https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account/search) - in order to use Azure AI Search you'll need a subscription (unless you are in the workshop on January 16, 2026 - see note below)
+- [Azure subscription](https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account/search) - in order to use Azure AI Search you'll need a subscription (unless you are in the workshop on April 17, 2026 - see note below)
     - We will be using Azure OpenAI and Azure AI Search resources
 
-> NOTE: For those of you in the workshop on January 16, 2026 - I will be providing you with the api keys to use predeployed Azure resources **for the day only**.
+> NOTE: For those of you in the workshop on April 17, 2026 - I will be providing you with the api keys to use predeployed Azure resources **for the day only**.
 
 ## Steps
 

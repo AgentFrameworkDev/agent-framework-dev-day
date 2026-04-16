@@ -32,12 +32,14 @@ At the top of this file, you can see the prompt that will categorize (ie. classi
 
 2. At the top of the file, you can see there is a brief description of what the agent does and some detail about the search index:
 ```shell
-You are a query classification system for an IT support ticket database. 
-Your task is to route questions to specialist search agents based on the user question.
+You are a query classification system for an IT support ticket database.
+Classify the incoming user question into exactly one category and return 
+a JSON object with "category" and "reasoning" fields.
 
 ## Database Schema
 The database contains IT support tickets with these fields:
 - Id: unique identifier
+- Create_Date: date the ticket was created
 - Subject: ticket subject
 - Body: ticket question/description
 - Answer: ticket response/solution
@@ -49,20 +51,12 @@ The database contains IT support tickets with these fields:
 - Tags: categorization tags
 
 **IMPORTANT**: When "and" combines field values (Type, Queue, Priority), these are FILTERS for counting/searching, NOT separate items to compare.
-
 ```
 
-3. Go to line 73, to see the specific portion of the prompt for the yes/no questions:
+3. Go to line 52, to see the specific portion of the prompt for the yes/no questions:
 ```shell
-**YES_NO_AGENT**: Simple yes/no questions (expect "yes" or "no" as answer)
-   - Keywords: "is", "are", "can", "does", "do", "will", "should", "any" (WITHOUT negation)
-   - Examples:
-     - "Are there any issues for Dell XPS laptops?"
-     - "Is my account locked?"
-     - "Can I access the VPN?"
-     - "Does the printer support color printing?"
-     - "Do we have problems with Surface devices?"
-
+**yes_no**: Explicit yes/no questions expecting a boolean answer.
+        - "Are there any issues for Dell XPS laptops?" -> yes_no
 ```
 
 This all means, you won't need to modify the classifier for the yes/no questions to classified correctly - you just need to implement the agent and wire it up so it can be routed to. Let's do that now.
@@ -182,7 +176,7 @@ public static AIAgent Create(ChatClient chatClient, SearchService searchService)
 {
     var searchFunction = CreateSearchFunction(searchService);
 
-    return chatClient.CreateAIAgent(
+    return chatClient.AsAIAgent(
         instructions: Instructions,
         name: "yes_no_agent",
         tools: new[] { AIFunctionFactory.Create(searchFunction) }
@@ -192,7 +186,7 @@ public static AIAgent Create(ChatClient chatClient, SearchService searchService)
 
 Now that we have the agent, we need to do two other things:
 - Add code to the [AgentFactory.cs](./Agents/AgentFactory.cs) to be able to create the agent
-- Add the agent to the workflows in the [Program.cs](Program.cs) - NOTE: there are two of them (one for demo/debugging and the other for interactive mode)
+- Add the agent to the workflow logic in the [Program.cs](Program.cs)
 
 6. Open the [AgentFactory.cs](./Agents/AgentFactory.cs) file, modify the `CreateAllAgents()` method to look like the following:
 ```c#
@@ -208,12 +202,26 @@ public Dictionary<string, AIAgent> CreateAllAgents()
 }
 ```
 
-7. Next, open the [Program.cs](Program.cs) file and find the two places the workflow is defined and modify it to the following:
+7. Next, open the [Program.cs](Program.cs) file and find the `BuildWorkflow()` and add a SpecialistExecutor for the "YesNo" and a Case statement:
 ```c#
-    var workflow = AgentWorkflowBuilder.CreateHandoffBuilderWith(agents["classifier"])
-        .WithHandoffs(agents["classifier"], [agents["semantic_search"], agents["yes_no"]])
-        .WithHandoffs([agents["semantic_search"], agents["yes_no"]], agents["classifier"])
-        .Build();
+    static Workflow BuildWorkflow(Dictionary<string, AIAgent> agents)
+    {
+        // Create executors
+        var classifierExecutor = new ClassifierExecutor(agents["classifier"]);
+        var semanticSearchExecutor = new SpecialistExecutor("SemanticSearch", agents["semantic_search"]);
+        var yesNoExecutor = new SpecialistExecutor("YesNo", agents["yes_no"]);
+
+        // Build workflow with switch-case routing
+        var builder = new WorkflowBuilder(classifierExecutor);
+        builder.AddSwitch(classifierExecutor, sb => sb
+            .AddCase(CategoryConditions.Is("yes_no"), yesNoExecutor)
+            .AddCase(CategoryConditions.Is("semantickSearch"), semanticSearchExecutor)
+            .WithDefault(semanticSearchExecutor)
+        )
+        .WithOutputFrom(yesNoExecutor, semanticSearchExecutor);
+
+        return builder.Build();
+    }
 ```
 
 You can now run the console application in your debugger or on the command line:

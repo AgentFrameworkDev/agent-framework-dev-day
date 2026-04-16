@@ -25,17 +25,10 @@ In our dataset some count questions could be:
 
 ## Classifier Prompt to recognize a count question
 
-1. In your VS Code, open the [ClassifierAgent.cs](./Agents/ClassifierAgent.cs) file, go to line 82 to find the count related portion.
+1. In your VS Code, open the [ClassifierAgent.cs](./Agents/ClassifierAgent.cs) file, go to line 55 to find the count related portion.
 ```shell
-   - When "and" combines database field values (Priority=high, Queue=HR, Type=Incident), these are FILTERS, not intersection
-   - Keywords: "how many", "number of", "count of", "total", "how much"
-   - Examples:
-     - "How many tickets were logged for Human Resources?" ✓ COUNT_AGENT
-     - "How many tickets were logged and Incidents for Human Resources and low priority?" ✓ COUNT_AGENT (Type=Incident AND Queue=HR AND Priority=low - all filters!)
-     - "What is the total number of open tickets?" ✓ COUNT_AGENT
-     - "Count of high priority incidents for IT?" ✓ COUNT_AGENT (Priority=high AND Type=Incident AND Queue=IT - all filters!) Human Resources and low priority?" ✓ COUNT_AGENT (and = filters)
-     - "What is the total number of open tickets?" ✓ COUNT_AGENT
-     - "Count of high priority incidents" ✓ COUNT_AGENT
+**count**: Counting questions ("how many", "count", "total", "number of").
+    - "How many Incidents for Human Resources and low priority?" -> count (all filters!)
 ```
 
 This prompt has been modified a few times after some testing to get to the current state. When you ask questions that require a count, there is information in that question that can be used to filter the data in order to get to a count. This means the majority of the prompt is a few-shot prompt with examples the LLM can use to infer the question is a count question.
@@ -206,7 +199,7 @@ public static AIAgent Create(ChatClient chatClient, SearchService searchService)
 {
     var searchFunction = CreateSearchFunction(searchService);
 
-    return chatClient.CreateAIAgent(
+    return chatClient.AsAIAgent(
         instructions: Instructions,
         name: "count_agent",
         tools: new[] { AIFunctionFactory.Create(searchFunction) }
@@ -232,12 +225,28 @@ public Dictionary<string, AIAgent> CreateAllAgents()
 
 ```
 
-7. Next, open the [Program.cs](Program.cs) file and find the two places the workflow is defined and modify it to the following:
+7. Next, open the [Program.cs](Program.cs) file and find the `BuildWorkflow()` and add a SpecialistExecutor for the "Count" and a Case statement:
 ```c#
-    var workflow = AgentWorkflowBuilder.CreateHandoffBuilderWith(agents["classifier"])
-        .WithHandoffs(agents["classifier"], [agents["semantic_search"], agents["yes_no"], agents["count"]])
-        .WithHandoffs([agents["semantic_search"], agents["yes_no"], agents["count"]], agents["classifier"])
-        .Build();
+   static Workflow BuildWorkflow(Dictionary<string, AIAgent> agents)
+    {
+        // Create executors
+        var classifierExecutor = new ClassifierExecutor(agents["classifier"]);
+        var semanticSearchExecutor = new SpecialistExecutor("SemanticSearch", agents["semantic_search"]);
+        var yesNoExecutor = new SpecialistExecutor("YesNo", agents["yes_no"]);
+        var countExecutor = new SpecialistExecutor("Count", agents["count"]);
+
+        // Build workflow with switch-case routing
+        var builder = new WorkflowBuilder(classifierExecutor);
+        builder.AddSwitch(classifierExecutor, sb => sb
+            .AddCase(CategoryConditions.Is("yes_no"), yesNoExecutor)
+            .AddCase(CategoryConditions.Is("count"), countExecutor)
+            .AddCase(CategoryConditions.Is("semantickSearch"), semanticSearchExecutor)
+            .WithDefault(semanticSearchExecutor)
+        )
+        .WithOutputFrom(yesNoExecutor, countExecutor, semanticSearchExecutor);
+
+        return builder.Build();
+    }
 ```
 
 You can now run the console application in your debugger or on the command line:

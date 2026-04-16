@@ -15,7 +15,7 @@
 I assume you have already gone through the notebooks, so your environment should already have the dependencies installed.
 
 ## Configure the Azure resources
-As long as you are in the workshop on Jan 16 reading this ... your appsettings.Local.json file should contain all the necessary resource settings.
+As long as you are in the workshop on April 17 reading this ... your appsettings.Local.json file should contain all the necessary resource settings.
 
 ## Overview of the starter code
 
@@ -36,12 +36,12 @@ In order for this workshop to be more challenging than my past RAG workshops, I 
 
 - **[SemanticSearchAgent.py](./Agents/SemanticSearchAgent.cs)**: Uses a tool-wrapped semantic search function to fetch tickets (top 10) and build evidence-rich responses.
 
-**[WorkflowHandlers.cs](./Workflows/WorkflowHandlers.cs)**: Helpers to print agent responses.
+**[Executors.cs](./Workflows/Executors.cs)**: Workflow helper classes.
 
 ### Architecture at a Glance
 
 #### Pattern: 
-Handoff orchestration — classifier coordinates, specialists handle work; easy to add more agents later (count, yes/no, difference, intersection, multi-hop, comparative).
+Classifier and specialists — classifier coordinates, specialists handle work; easy to add more agents later (count, yes/no, difference, intersection, multi-hop, comparative).
 
 #### Data flow:
 User question → classifier routes → specialist agent tool calls SearchService → results returned to agent → response streamed back via workflow events.
@@ -68,7 +68,7 @@ Using the Azure AI Search index that is preloaded with the [Customer IT Support 
 I'll provide the stpes to create and add the agents to answer the Yes/No and Count question types, and then describe the ideas for you to create the others on your own.
 
 ### Bonus Challenge
-Add the useage the create_date field so you can answer these questions:
+Using create_date field you can add agents to answer these questions:
 - What was the last ticket entered for Human Resources? (Ordinal)
 - What is the oldest high priority ticket? (Superlative)
 

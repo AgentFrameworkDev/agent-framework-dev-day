@@ -214,7 +214,7 @@ def create_yes_no_agent(
 
 Now that we have the agent, we need to do two other things:
 - Add code to the [agent_factory.py](./agents/agent_factory.py) to be able to create the agent
-- Add the agent to the workflows in the [main.py](main.py) - NOTE: there are two of them (one for demo/debugging and the other for interactive mode)
+- Add the agent to the workflow logic in the [main.py](main.py)
 
 6. Open the [agent_factory.py](./agents/agent_factory.py) file, add the import for the agent toward the top where the semantic_agent is:
 ```python

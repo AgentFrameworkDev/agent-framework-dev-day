@@ -13,7 +13,7 @@ As mentioned in the presentation, RAG applications are often easy to get started
 
 ## Learning Objectives
 - Create an application that uses the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework)
-- Utilize the [Handoff](https://learn.microsoft.com/en-us/agent-framework/user-guide/workflows/orchestrations/handoff?pivots=programming-language-python) workflow orchestration
+- Utilize workflow orchestration and structured responses
 - Write specialized agents that perform specific search capabilities with [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search/)
 
 ## Prerequisites
@@ -22,10 +22,10 @@ Please install the software ahead of the workshop:
 - [VS Code](https://code.visualstudio.com/download)
 - [.NET 10](https://dotnet.microsoft.com/en-us/download)
 - [Git](https://git-scm.com/downloads) and [Github login](https://github.com) - these will make working with the workshop easier on you
-- [Azure subscription](https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account/search) - in order to use Azure AI Search you'll need a subscription (unless you are in the workshop on January 16, 2026 - see note below)
+- [Azure subscription](https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account/search) - in order to use Azure AI Search you'll need a subscription (unless you are in the workshop on April 17, 2026 - see note below)
     - We will be using Azure OpenAI and Azure AI Search resources
 
-> NOTE: For those of you in the workshop on January 16, 2026 - I will be providing you with the api keys to use predeployed Azure resources **for the day only**.
+> NOTE: For those of you in the workshop on April 17, 2026 - I will be providing you with the api keys to use predeployed Azure resources **for the day only**.
 
 ## Steps
 
