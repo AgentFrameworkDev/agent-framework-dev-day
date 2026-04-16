@@ -180,7 +180,7 @@ public static class DifferenceAgent
     {
         var searchFunction = CreateSearchFunction(searchService);
 
-        return chatClient.CreateAIAgent(
+        return chatClient.AsAIAgent(
             instructions: Instructions,
             name: "difference_agent",
             tools: new[] { AIFunctionFactory.Create(searchFunction) }

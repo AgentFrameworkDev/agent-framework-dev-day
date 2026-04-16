@@ -190,7 +190,7 @@ public static class IntersectionAgent
     {
         var searchFunction = CreateSearchFunction(searchService);
 
-        return chatClient.CreateAIAgent(
+        return chatClient.AsAIAgent(
             instructions: Instructions,
             name: "intersection_agent",
             tools: new[] { AIFunctionFactory.Create(searchFunction) }

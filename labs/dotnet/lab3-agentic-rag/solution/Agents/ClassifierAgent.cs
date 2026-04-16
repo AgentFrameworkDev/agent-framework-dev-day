@@ -118,7 +118,7 @@ public static class ClassifierAgent
 
     public static AIAgent Create(ChatClient chatClient)
     {
-        return chatClient.CreateAIAgent(
+        return chatClient.AsAIAgent(
             instructions: Instructions,
             name: "classifier_agent"
         );
