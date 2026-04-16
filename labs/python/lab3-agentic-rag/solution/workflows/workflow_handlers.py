@@ -4,7 +4,7 @@ Workflow result handlers for WorkflowBuilder-based workflows.
 from agent_framework import AgentResponse, WorkflowRunResult
 
 
-def handle_workflow_result(result: WorkflowRunResult, verbose: bool = True) -> None:
+def handle_workflow_result(result: WorkflowRunResult) -> None:
     """
     Process a WorkflowRunResult and print the outputs.
 
@@ -12,7 +12,6 @@ def handle_workflow_result(result: WorkflowRunResult, verbose: bool = True) -> N
 
     Args:
         result: WorkflowRunResult returned by workflow.run()
-        verbose: Whether to print detailed information
     """
     outputs = result.get_outputs()
 
