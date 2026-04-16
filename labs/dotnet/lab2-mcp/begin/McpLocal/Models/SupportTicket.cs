@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Customer Support Ticket Model for Local MCP Server
+// TEMPLATE: Copy this to your local MCP server project
 
 namespace McpLocal.Models;
 

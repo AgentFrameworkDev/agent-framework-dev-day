@@ -1,0 +1,11 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="McpAgentClient/McpAgentClient.csproj" />
+  <Project Path="McpBridge/McpBridge.csproj" />
+  <Project Path="McpLocal/McpLocal.csproj" />
+  <Project Path="RemoteServer/RemoteServer.csproj" />
+</Solution>

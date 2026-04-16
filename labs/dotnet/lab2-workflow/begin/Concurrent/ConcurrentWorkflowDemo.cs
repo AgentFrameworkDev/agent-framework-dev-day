@@ -1,13 +1,3 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Concurrent Workflow Demo
-
-// ============================================================================
-// EXERCISE 3: Concurrent Workflow Demo
-// ============================================================================
-// This demonstrates a concurrent workflow that sends questions to multiple
-// specialist agents simultaneously (fan-out) and combines their responses (fan-in).
-// ============================================================================
-
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using WorkflowLab.Common;
@@ -16,6 +6,18 @@ namespace WorkflowLab.Concurrent;
 
 /// <summary>
 /// Concurrent Workflow Demo - Multi-Agent Customer Support
+/// 
+/// This demonstrates a concurrent workflow that:
+/// 1. Takes a customer question as input
+/// 2. Sends the question to multiple specialist agents simultaneously
+/// 3. Collects and combines responses from all agents
+/// 
+/// Concepts covered:
+/// - Fan-out Edges (distribute to multiple agents)
+/// - Fan-in Edges (collect from multiple agents)
+/// - AI Agent Integration
+/// - Turn Tokens
+/// - Streaming Execution
 /// </summary>
 public static class ConcurrentWorkflowDemo
 {
@@ -27,16 +29,22 @@ public static class ConcurrentWorkflowDemo
         Console.WriteLine("  Customer Question -> [Billing Expert + Technical Expert] -> Combined Response");
         Console.WriteLine();
 
-        // ============================================================================
-        // STEP 3.3: Set up the Azure OpenAI client
-        // Uncomment the line below
-        // ============================================================================
-        // var chatClient = AzureOpenAIClientFactory.CreateChatClient();
+        // Set up the Azure OpenAI client
+        var chatClient = AzureOpenAIClientFactory.CreateChatClient();
 
-        // ============================================================================
-        // STEP 3.4: Create specialized AI agents
-        // Uncomment the AI agent definitions below
-        // ============================================================================
+        // ========================================================================
+        // STEP 3: Build the Concurrent Workflow
+        // ========================================================================
+        // TODO: Create AI agents, executors, and build the concurrent workflow
+        //
+        // Hints:
+        // - Create ChatClientAgent for billing expert and technical expert
+        // - Create ConcurrentStartExecutor and ConcurrentAggregationExecutor
+        // - Use WorkflowBuilder with:
+        //   .AddFanOutEdge(startExecutor, targets: [billingExpert, technicalExpert])
+        //   .AddFanInBarrierEdge(sources: [billingExpert, technicalExpert], aggregationExecutor)
+        // - Use InProcessExecution.RunStreamingAsync(workflow, customerQuestion)
+        //
         // ChatClientAgent billingExpert = new(
         //     chatClient,
         //     name: "BillingExpert",
@@ -47,7 +55,7 @@ public static class ConcurrentWorkflowDemo
         //         Keep responses concise (2-3 sentences).
         //         """
         // );
-        // 
+        //
         // ChatClientAgent technicalExpert = new(
         //     chatClient,
         //     name: "TechnicalExpert",
@@ -58,39 +66,25 @@ public static class ConcurrentWorkflowDemo
         //         Keep responses concise (2-3 sentences).
         //         """
         // );
-
-        // ============================================================================
-        // STEP 3.5: Create executors
-        // Uncomment the lines below
-        // ============================================================================
+        //
         // var startExecutor = new ConcurrentStartExecutor();
         // var aggregationExecutor = new ConcurrentAggregationExecutor();
-
-        // ============================================================================
-        // STEP 3.6: Build the workflow with fan-out and fan-in edges
-        // Uncomment the workflow building code below
-        // ============================================================================
+        //
         // var workflow = new WorkflowBuilder(startExecutor)
         //     .AddFanOutEdge(startExecutor, targets: [billingExpert, technicalExpert])
-        //     .AddFanInEdge(sources: [billingExpert, technicalExpert], aggregationExecutor)
+        //     .AddFanInBarrierEdge(sources: [billingExpert, technicalExpert], aggregationExecutor)
         //     .WithOutputFrom(aggregationExecutor)
         //     .Build();
-
-        // Sample customer question
-        var customerQuestion = "My subscription was charged twice this month and the app keeps crashing when I try to view my invoice.";
-
-        Console.WriteLine("Customer Question:");
-        Console.WriteLine($"   \"{customerQuestion}\"");
-        Console.WriteLine();
-
-        // ============================================================================
-        // STEP 3.7: Execute the workflow in streaming mode
-        // Uncomment the execution code below and REMOVE the placeholder
-        // ============================================================================
+        //
+        // var customerQuestion = "My subscription was charged twice this month and the app keeps crashing when I try to view my invoice.";
+        //
+        // Console.WriteLine("Customer Question:");
+        // Console.WriteLine($"   \"{customerQuestion}\"");
+        // Console.WriteLine();
         // Console.WriteLine("Sending question to Billing Expert and Technical Expert simultaneously...");
         // Console.WriteLine();
-        // 
-        // await using StreamingRun run = await InProcessExecution.StreamAsync(workflow, customerQuestion);
+        //
+        // await using StreamingRun run = await InProcessExecution.RunStreamingAsync(workflow, customerQuestion);
         // await foreach (WorkflowEvent evt in run.WatchStreamAsync())
         // {
         //     if (evt is WorkflowOutputEvent output)
@@ -99,11 +93,10 @@ public static class ConcurrentWorkflowDemo
         //         Console.WriteLine(output.Data);
         //     }
         // }
-        // 
+        //
         // Console.WriteLine();
         // Console.WriteLine("Concurrent workflow completed!");
-
-        // Placeholder - REMOVE after uncommenting above
-        Console.WriteLine("Exercise 3 not completed. Please uncomment the code in ConcurrentWorkflowDemo.cs and Executors.cs");
+        // ========================================================================
+        throw new NotImplementedException("STEP 3: Build the Concurrent Workflow");
     }
 }

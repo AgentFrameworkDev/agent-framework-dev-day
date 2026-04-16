@@ -1,38 +1,44 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Sequential Workflow Executors
-
-// ============================================================================
-// EXERCISE 2: Create Sequential Workflow Executors
-// ============================================================================
-// Executors are the building blocks of workflows. They process inputs and
-// send messages to the next step in the workflow.
-// ============================================================================
-
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using WorkflowLab.Common;
 
 namespace WorkflowLab.Sequential;
 
-// ============================================================================
-// STEP 2.1: Create TicketIntakeExecutor
-// This executor receives tickets and formats them for the AI agent.
-// Uncomment the entire class below.
-// ============================================================================
-// /// <summary>
-// /// Executor that handles ticket intake and validation.
-// /// </summary>
+// ========================================================================
+// STEP 2: Implement Sequential Workflow Executors
+// ========================================================================
+// TODO: Create three executor classes for the sequential workflow pipeline:
+//
+// 1. TicketIntakeExecutor - Receives a SupportTicket, formats it as text,
+//    and sends it to the next executor (AI categorization agent)
+//
+// 2. CategorizationBridgeExecutor - Receives AI categorization output
+//    (List<ChatMessage>), extracts the result, and prepares a prompt
+//    for the response agent
+//
+// 3. ResponseBridgeExecutor - Receives AI response output (List<ChatMessage>),
+//    extracts the final response text, and yields it as workflow output
+//
+// Hints:
+// - Executors inherit from Executor<T> where T is the input type
+// - Use [SendsMessage(typeof(ChatMessage))] and [SendsMessage(typeof(TurnToken))]
+//   attributes to declare what messages an executor sends
+// - Use [YieldsOutput(typeof(string))] to declare workflow output
+// - context.SendMessageAsync() sends to the next executor
+// - context.YieldOutputAsync() produces workflow output
+// - new TurnToken(emitEvents: true) triggers the AI agent to respond
+//
+// [SendsMessage(typeof(ChatMessage))]
+// [SendsMessage(typeof(TurnToken))]
 // internal sealed class TicketIntakeExecutor() : Executor<SupportTicket>("TicketIntake")
 // {
 //     public override async ValueTask HandleAsync(SupportTicket ticket, IWorkflowContext context, CancellationToken cancellationToken = default)
 //     {
-//         // Validate the ticket
 //         if (string.IsNullOrWhiteSpace(ticket.Subject) || string.IsNullOrWhiteSpace(ticket.Description))
 //         {
 //             throw new ArgumentException("Support ticket must have a subject and description.");
 //         }
-// 
-//         // Format the ticket for the AI categorization agent
+//
 //         var ticketText = $"""
 //             Ticket ID: {ticket.TicketId}
 //             Customer ID: {ticket.CustomerId}
@@ -41,30 +47,22 @@ namespace WorkflowLab.Sequential;
 //             Subject: {ticket.Subject}
 //             Description: {ticket.Description}
 //             """;
-// 
-//         // Send to the next executor (AI categorization agent)
+//
 //         await context.SendMessageAsync(new ChatMessage(ChatRole.User, ticketText), cancellationToken);
 //         await context.SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken);
 //     }
 // }
-
-// ============================================================================
-// STEP 2.2: Create CategorizationBridgeExecutor
-// This executor processes AI categorization output and prepares for response generation.
-// Uncomment the entire class below.
-// ============================================================================
-// /// <summary>
-// /// Bridge executor that processes categorization output and prepares for response generation.
-// /// </summary>
+//
+// [SendsMessage(typeof(ChatMessage))]
+// [SendsMessage(typeof(TurnToken))]
 // internal sealed class CategorizationBridgeExecutor() : Executor<List<ChatMessage>>("CategorizationBridge")
 // {
 //     public override async ValueTask HandleAsync(List<ChatMessage> messages, IWorkflowContext context, CancellationToken cancellationToken = default)
 //     {
 //         var categorizationResult = messages.LastOrDefault()?.Text ?? "Unknown category";
-// 
+//
 //         Console.WriteLine($"   Categorization: {categorizationResult}");
-// 
-//         // Prepare prompt for response agent with categorization context
+//
 //         var responsePrompt = $"""
 //             Based on the following ticket categorization, generate a customer response:
 //             
@@ -72,20 +70,13 @@ namespace WorkflowLab.Sequential;
 //             
 //             Please generate an appropriate customer support response.
 //             """;
-// 
+//
 //         await context.SendMessageAsync(new ChatMessage(ChatRole.User, responsePrompt), cancellationToken);
 //         await context.SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken);
 //     }
 // }
-
-// ============================================================================
-// STEP 2.3: Create ResponseBridgeExecutor
-// This executor processes the final AI response and yields output.
-// Uncomment the entire class below.
-// ============================================================================
-// /// <summary>
-// /// Bridge executor that processes the final response from the AI agent.
-// /// </summary>
+//
+// [YieldsOutput(typeof(string))]
 // internal sealed class ResponseBridgeExecutor() : Executor<List<ChatMessage>>("ResponseBridge")
 // {
 //     public override async ValueTask HandleAsync(List<ChatMessage> messages, IWorkflowContext context, CancellationToken cancellationToken = default)
@@ -94,28 +85,34 @@ namespace WorkflowLab.Sequential;
 //         await context.YieldOutputAsync(response, cancellationToken);
 //     }
 // }
+// ========================================================================
 
-// Placeholder classes - REMOVE after uncommenting above
+// Placeholder classes so the project compiles - replace with your implementation above
+[SendsMessage(typeof(ChatMessage))]
+[SendsMessage(typeof(TurnToken))]
 internal sealed class TicketIntakeExecutor() : Executor<SupportTicket>("TicketIntake")
 {
     public override ValueTask HandleAsync(SupportTicket ticket, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Exercise 2.1 not completed.");
+        throw new NotImplementedException("STEP 2: Implement TicketIntakeExecutor");
     }
 }
 
+[SendsMessage(typeof(ChatMessage))]
+[SendsMessage(typeof(TurnToken))]
 internal sealed class CategorizationBridgeExecutor() : Executor<List<ChatMessage>>("CategorizationBridge")
 {
     public override ValueTask HandleAsync(List<ChatMessage> messages, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Exercise 2.2 not completed.");
+        throw new NotImplementedException("STEP 2: Implement CategorizationBridgeExecutor");
     }
 }
 
+[YieldsOutput(typeof(string))]
 internal sealed class ResponseBridgeExecutor() : Executor<List<ChatMessage>>("ResponseBridge")
 {
     public override ValueTask HandleAsync(List<ChatMessage> messages, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Exercise 2.3 not completed.");
+        throw new NotImplementedException("STEP 2: Implement ResponseBridgeExecutor");
     }
 }

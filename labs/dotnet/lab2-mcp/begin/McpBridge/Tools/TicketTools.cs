@@ -1,188 +1,137 @@
 // Copyright (c) Microsoft. All rights reserved.
-// MCP Tools that call the REST API via HTTP
-// This is the bridge between MCP protocol and REST API
+// MCP Tools for Customer Support Ticket operations (MCP Bridge -> REST API)
+// These tools forward requests to the REST API backend
 
 using System.ComponentModel;
 using System.Text.Json;
-using McpBridge.Models;
 using ModelContextProtocol.Server;
 
 namespace McpBridge.Tools;
 
 /// <summary>
-/// MCP Tools that call the REST API via HTTP.
-/// This demonstrates how MCP servers act as bridges to existing REST services.
+/// MCP Tools for reading and updating customer support tickets via REST API.
+/// Same tools as Python mcp_bridge for consistency.
 /// </summary>
 [McpServerToolType]
 public sealed class TicketTools
 {
-    private readonly HttpClient _httpClient;
     private readonly ILogger<TicketTools> _logger;
+    private readonly HttpClient _httpClient;
     private static readonly JsonSerializerOptions JsonOptions = new() 
     { 
         WriteIndented = true,
         PropertyNameCaseInsensitive = true
     };
 
-    public TicketTools(IHttpClientFactory httpClientFactory, ILogger<TicketTools> logger)
+    // REST API base URL
+    private const string REST_API_URL = "http://localhost:5060";
+
+    public TicketTools(ILogger<TicketTools> logger, IHttpClientFactory httpClientFactory)
     {
-        _httpClient = httpClientFactory.CreateClient("RestApi");
         _logger = logger;
+        _httpClient = httpClientFactory.CreateClient();
     }
 
     /// <summary>
-    /// Gets a support ticket by ID via REST API call.
+    /// Gets all support tickets from the REST API with optional limit.
     /// </summary>
     [McpServerTool]
-    [Description("Gets a customer support ticket by calling the REST API. If no ID is provided, returns all tickets. Example IDs: TKT-001, TKT-002")]
+    [Description("Gets all support tickets from the REST API with optional limit")]
+    public async Task<string> GetAllTickets(
+        [Description("Maximum number of tickets to return (default: 5)")] 
+        int maxResults = 5)
+    {
+        _logger.LogInformation("GetAllTickets called with maxResults: {MaxResults}", maxResults);
+
+        try
+        {
+            var response = await _httpClient.GetAsync($"{REST_API_URL}/api/tickets");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var tickets = JsonSerializer.Deserialize<JsonElement[]>(content, JsonOptions);
+                var limited = tickets?.Take(maxResults).ToArray();
+                _logger.LogInformation("GetAllTickets returned {Count} tickets", limited?.Length ?? 0);
+                return JsonSerializer.Serialize(limited, JsonOptions);
+            }
+            return JsonSerializer.Serialize(new { Success = false, Message = "Failed to retrieve tickets" }, JsonOptions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calling REST API");
+            return JsonSerializer.Serialize(new { Success = false, Message = $"Error calling REST API: {ex.Message}" }, JsonOptions);
+        }
+    }
+
+    /// <summary>
+    /// Gets a support ticket by ID from the REST API.
+    /// </summary>
+    [McpServerTool]
+    [Description("Gets a support ticket by ID from the REST API")]
     public async Task<string> GetTicket(
-        [Description("The ticket ID to retrieve (e.g., TKT-001). Leave empty to get all tickets.")] 
-        string? ticketId = null,
-        [Description("Optional status filter: Open, InProgress, Resolved, or Closed")] 
-        string? statusFilter = null,
-        CancellationToken cancellationToken = default)
+        [Description("The ticket ID (e.g., TICKET-001)")] 
+        string ticketId)
     {
-        _logger.LogInformation("GetTicket via REST API - ID: '{TicketId}', Status: '{Status}'", 
-            ticketId ?? "(all)", statusFilter ?? "(none)");
+        _logger.LogInformation("GetTicket called with ticketId: {TicketId}", ticketId);
 
         try
         {
-            string url;
-            if (!string.IsNullOrWhiteSpace(ticketId))
+            var response = await _httpClient.GetAsync($"{REST_API_URL}/api/tickets/{ticketId}");
+            if (response.IsSuccessStatusCode)
             {
-                // Get specific ticket
-                url = $"/api/tickets/{ticketId}";
-                _logger.LogInformation("Calling REST API: GET {Url}", _httpClient.BaseAddress + url);
-                
-                var response = await _httpClient.GetAsync(url, cancellationToken);
-                
-                if (!response.IsSuccessStatusCode)
-                {
-                    return JsonSerializer.Serialize(new
-                    {
-                        Success = false,
-                        Message = $"Ticket '{ticketId}' not found. HTTP {(int)response.StatusCode}"
-                    }, JsonOptions);
-                }
-
-                var ticket = await response.Content.ReadFromJsonAsync<SupportTicket>(JsonOptions, cancellationToken);
-                return JsonSerializer.Serialize(new
-                {
-                    Success = true,
-                    Message = $"Found ticket '{ticketId}' via REST API",
-                    Ticket = ticket
-                }, JsonOptions);
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("GetTicket returned: {Content}", content.Substring(0, Math.Min(200, content.Length)));
+                return content;
             }
-            else
-            {
-                // Get all tickets (with optional status filter)
-                url = string.IsNullOrWhiteSpace(statusFilter) 
-                    ? "/api/tickets"
-                    : $"/api/tickets?status={statusFilter}";
-                    
-                _logger.LogInformation("Calling REST API: GET {Url}", _httpClient.BaseAddress + url);
-                
-                var tickets = await _httpClient.GetFromJsonAsync<List<SupportTicket>>(url, JsonOptions, cancellationToken);
-                
-                return JsonSerializer.Serialize(new
-                {
-                    Success = true,
-                    Message = $"Found {tickets?.Count ?? 0} ticket(s) via REST API",
-                    Tickets = tickets
-                }, JsonOptions);
-            }
+            return JsonSerializer.Serialize(new { Success = false, Message = $"Ticket '{ticketId}' not found" }, JsonOptions);
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
-            _logger.LogError(ex, "REST API call failed");
-            return JsonSerializer.Serialize(new
-            {
-                Success = false,
-                Message = $"Failed to call REST API: {ex.Message}. Is the REST API server running?"
-            }, JsonOptions);
+            _logger.LogError(ex, "Error calling REST API");
+            return JsonSerializer.Serialize(new { Success = false, Message = $"Error calling REST API: {ex.Message}" }, JsonOptions);
         }
     }
 
     /// <summary>
-    /// Updates a support ticket via REST API call.
+    /// Updates a support ticket status via the REST API.
     /// </summary>
     [McpServerTool]
-    [Description("Updates a customer support ticket by calling the REST API. You can change status, priority, assignee, or resolution.")]
+    [Description("Updates a support ticket status via the REST API")]
     public async Task<string> UpdateTicket(
-        [Description("The ticket ID to update (required, e.g., TKT-001)")] 
+        [Description("The ticket ID")] 
         string ticketId,
-        [Description("New status: Open, InProgress, Resolved, or Closed")] 
-        string? status = null,
-        [Description("New priority: Low, Medium, High, or Critical")] 
-        string? priority = null,
-        [Description("Person or team to assign the ticket to")] 
-        string? assignedTo = null,
-        [Description("Resolution notes (typically added when resolving/closing)")] 
-        string? resolution = null,
-        CancellationToken cancellationToken = default)
+        [Description("The new status (Open, InProgress, Resolved, Closed)")] 
+        string status)
     {
-        _logger.LogInformation("UpdateTicket via REST API - ID: '{TicketId}'", ticketId);
-
-        if (string.IsNullOrWhiteSpace(ticketId))
-        {
-            return JsonSerializer.Serialize(new
-            {
-                Success = false,
-                Message = "Ticket ID is required."
-            }, JsonOptions);
-        }
+        _logger.LogInformation("UpdateTicket called - ticketId: {TicketId}, status: {Status}", ticketId, status);
 
         try
         {
-            // Build update request
-            var request = new UpdateTicketRequest();
-
-            if (!string.IsNullOrWhiteSpace(status))
+            // Use lowercase property name to match ASP.NET Core's default camelCase JSON serialization
+            var content = new StringContent(
+                JsonSerializer.Serialize(new { status }),
+                System.Text.Encoding.UTF8,
+                "application/json"
+            );
+            
+            var response = await _httpClient.PutAsync($"{REST_API_URL}/api/tickets/{ticketId}", content);
+            _logger.LogInformation("UpdateTicket response: {StatusCode}", response.StatusCode);
+            
+            if (response.IsSuccessStatusCode)
             {
-                if (Enum.TryParse<TicketStatus>(status, true, out var statusValue))
-                    request.Status = statusValue;
-                else
-                    return JsonSerializer.Serialize(new
-                    {
-                        Success = false,
-                        Message = $"Invalid status '{status}'. Valid: Open, InProgress, Resolved, Closed"
-                    }, JsonOptions);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("UpdateTicket response body: {Body}", responseContent);
+                return responseContent;
             }
-
-            if (!string.IsNullOrWhiteSpace(priority))
-            {
-                if (Enum.TryParse<TicketPriority>(priority, true, out var priorityValue))
-                    request.Priority = priorityValue;
-                else
-                    return JsonSerializer.Serialize(new
-                    {
-                        Success = false,
-                        Message = $"Invalid priority '{priority}'. Valid: Low, Medium, High, Critical"
-                    }, JsonOptions);
-            }
-
-            if (assignedTo != null)
-                request.AssignedTo = assignedTo;
-
-            if (resolution != null)
-                request.Resolution = resolution;
-
-            var url = $"/api/tickets/{ticketId}";
-            _logger.LogInformation("Calling REST API: PUT {Url}", _httpClient.BaseAddress + url);
-
-            var response = await _httpClient.PutAsJsonAsync(url, request, JsonOptions, cancellationToken);
-            var result = await response.Content.ReadFromJsonAsync<TicketResult>(JsonOptions, cancellationToken);
-
-            return JsonSerializer.Serialize(result, JsonOptions);
+            
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogWarning("UpdateTicket failed: {Error}", errorContent);
+            return JsonSerializer.Serialize(new { Success = false, Message = $"Failed to update ticket '{ticketId}': {errorContent}" }, JsonOptions);
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
-            _logger.LogError(ex, "REST API call failed");
-            return JsonSerializer.Serialize(new
-            {
-                Success = false,
-                Message = $"Failed to call REST API: {ex.Message}. Is the REST API server running?"
-            }, JsonOptions);
+            _logger.LogError(ex, "Error calling REST API");
+            return JsonSerializer.Serialize(new { Success = false, Message = $"Error calling REST API: {ex.Message}" }, JsonOptions);
         }
     }
 }

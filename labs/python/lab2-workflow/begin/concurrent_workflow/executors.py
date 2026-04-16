@@ -2,7 +2,7 @@
 Concurrent Workflow Executors
 
 ============================================================================
-EXERCISE 3: Create Concurrent Workflow Executors
+EXERCISE 3: Create Concurrent Workflow Executors (Steps 3.1-3.2)
 ============================================================================
 These executors handle fan-out (broadcasting to multiple agents) and
 fan-in (aggregating results from multiple agents).
@@ -40,10 +40,10 @@ class Executor:
 #     """
 #     Executor that starts the concurrent processing by broadcasting messages to all connected agents.
 #     """
-#     
+#
 #     def __init__(self):
 #         super().__init__("ConcurrentStart")
-#     
+#
 #     async def handle(self, message: str) -> tuple[str, WorkflowEvent]:
 #         """Broadcast message to start concurrent processing."""
 #         print("Broadcasting question to all experts...")
@@ -61,10 +61,10 @@ class Executor:
 #     """
 #     Executor that aggregates the results from multiple concurrent agents.
 #     """
-#     
+#
 #     def __init__(self):
 #         super().__init__("ConcurrentAggregation")
-#     
+#
 #     async def handle(self, responses: dict[str, str]) -> tuple[str, WorkflowEvent]:
 #         """Aggregate responses from all agents."""
 #         formatted_messages = "\n\n".join(
@@ -79,7 +79,7 @@ class Executor:
 class ConcurrentStartExecutor(Executor):
     def __init__(self):
         super().__init__("ConcurrentStart")
-    
+
     async def handle(self, message: str) -> tuple[str, WorkflowEvent]:
         raise NotImplementedError("Exercise 3.1 not completed.")
 
@@ -87,6 +87,6 @@ class ConcurrentStartExecutor(Executor):
 class ConcurrentAggregationExecutor(Executor):
     def __init__(self):
         super().__init__("ConcurrentAggregation")
-    
+
     async def handle(self, responses: dict[str, str]) -> tuple[str, WorkflowEvent]:
         raise NotImplementedError("Exercise 3.2 not completed.")

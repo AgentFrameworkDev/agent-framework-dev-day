@@ -42,16 +42,21 @@ def create_chat_client() -> AzureOpenAI:
     # STEP 1.2: Get deployment name from environment
     # Uncomment the line below
     # ============================================================================
-    # deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
+    # deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or \
+    #              os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME") or \
+    #              "gpt-4o-mini"
     
     # Placeholder - REMOVE after uncommenting above
     deployment = "gpt-4o-mini"
     
     api_version = "2024-02-15-preview"
     
+    print(f"Using endpoint: {endpoint}")
+    print(f"Using deployment: {deployment}")
+    
     # ============================================================================
     # STEP 1.3: Enable authentication
-    # Uncomment ONE of the authentication options below based on your setup
+    # Uncomment ONE or more of the authentication options below based on your setup
     # ============================================================================
     
     # Option 1: API Key authentication

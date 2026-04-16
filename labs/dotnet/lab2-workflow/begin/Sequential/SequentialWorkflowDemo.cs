@@ -1,14 +1,3 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Sequential Workflow Demo
-
-// ============================================================================
-// EXERCISE 2: Sequential Workflow Demo
-// ============================================================================
-// This demonstrates a sequential AI-powered workflow that processes customer
-// support tickets through a linear pipeline:
-// 1. Ticket Intake -> 2. AI Categorization -> 3. AI Response Generation
-// ============================================================================
-
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using WorkflowLab.Common;
@@ -17,6 +6,18 @@ namespace WorkflowLab.Sequential;
 
 /// <summary>
 /// Sequential Workflow Demo - Customer Support Ticket System
+/// 
+/// This demonstrates a sequential AI-powered workflow that processes customer support tickets:
+/// 1. Ticket Intake Executor: Receives and validates the incoming support ticket
+/// 2. AI Categorization Agent: Analyzes and categorizes the ticket (billing, technical, general)
+/// 3. AI Response Agent: Generates an appropriate response based on the category
+/// 
+/// Concepts covered:
+/// - Executors (function-based and class-based)
+/// - Direct Edges
+/// - Workflow Builder
+/// - Events
+/// - AI Agent Integration with ChatClientAgent
 /// </summary>
 public static class SequentialWorkflowDemo
 {
@@ -28,25 +29,26 @@ public static class SequentialWorkflowDemo
         Console.WriteLine("  1. Ticket Intake -> 2. AI Categorization -> 3. AI Response Generation");
         Console.WriteLine();
 
-        // ============================================================================
-        // STEP 2.4: Set up the Azure OpenAI client
-        // Uncomment the line below
-        // ============================================================================
-        // var chatClient = AzureOpenAIClientFactory.CreateChatClient();
+        // Set up the Azure OpenAI client
+        var chatClient = AzureOpenAIClientFactory.CreateChatClient();
 
-        // ============================================================================
-        // STEP 2.5: Create executors
-        // Uncomment the lines below
-        // ============================================================================
+        // ========================================================================
+        // STEP 2: Build the Sequential Workflow
+        // ========================================================================
+        // TODO: Create executors, AI agents, and build the sequential workflow
+        //
+        // Hints:
+        // - Create executor instances: TicketIntakeExecutor, CategorizationBridgeExecutor, ResponseBridgeExecutor
+        // - Create ChatClientAgent for categorization with instructions to categorize tickets
+        // - Create ChatClientAgent for response generation with instructions to generate customer responses
+        // - Use WorkflowBuilder to chain: ticketIntake -> categorizationAgent -> categorizationBridge -> responseAgent -> responseBridge
+        // - Use .WithOutputFrom(responseBridge) to set the output
+        // - Use InProcessExecution.RunStreamingAsync(workflow, sampleTicket) to execute
+        //
         // var ticketIntake = new TicketIntakeExecutor();
         // var categorizationBridge = new CategorizationBridgeExecutor();
         // var responseBridge = new ResponseBridgeExecutor();
-
-        // ============================================================================
-        // STEP 2.6: Create AI Agents
-        // Uncomment the AI agent definitions below
-        // ============================================================================
-        // // AI Categorization Agent - categorizes the ticket
+        //
         // ChatClientAgent categorizationAgent = new(
         //     chatClient,
         //     name: "CategorizationAgent",
@@ -63,8 +65,7 @@ public static class SequentialWorkflowDemo
         //         Keep your response concise and only output the JSON.
         //         """
         // );
-
-        // // AI Response Agent - generates the customer response
+        //
         // ChatClientAgent responseAgent = new(
         //     chatClient,
         //     name: "ResponseAgent",
@@ -80,11 +81,7 @@ public static class SequentialWorkflowDemo
         //         - Include a reference ticket number format: TKT-XXXXX
         //         """
         // );
-
-        // ============================================================================
-        // STEP 2.7: Build the sequential workflow using WorkflowBuilder
-        // Uncomment the workflow building code below
-        // ============================================================================
+        //
         // var workflow = new WorkflowBuilder(ticketIntake)
         //     .AddEdge(ticketIntake, categorizationAgent)
         //     .AddEdge(categorizationAgent, categorizationBridge)
@@ -92,48 +89,64 @@ public static class SequentialWorkflowDemo
         //     .AddEdge(responseAgent, responseBridge)
         //     .WithOutputFrom(responseBridge)
         //     .Build();
-
-        // Sample customer support ticket
-        var sampleTicket = new SupportTicket(
-            TicketId: "TKT-12345",
-            CustomerId: "CUST-12345",
-            CustomerName: "John Smith",
-            Subject: "Unable to access my account after password reset",
-            Description: "I tried to reset my password yesterday but now I cannot log in. " +
-                         "I've tried multiple times and keep getting an 'invalid credentials' error. " +
-                         "This is urgent as I need to access my billing information.",
-            Priority: TicketPriority.High
-        );
-
-        Console.WriteLine("Incoming Support Ticket:");
-        Console.WriteLine($"   Ticket ID: {sampleTicket.TicketId}");
-        Console.WriteLine($"   Customer: {sampleTicket.CustomerName} ({sampleTicket.CustomerId})");
-        Console.WriteLine($"   Priority: {sampleTicket.Priority}");
-        Console.WriteLine($"   Subject: {sampleTicket.Subject}");
-        Console.WriteLine($"   Description: {sampleTicket.Description[..Math.Min(80, sampleTicket.Description.Length)]}...");
-        Console.WriteLine();
-
-        // ============================================================================
-        // STEP 2.8: Execute the workflow
-        // Uncomment the execution code below and REMOVE the placeholder
-        // ============================================================================
-        // Console.WriteLine("Processing ticket through sequential workflow...");
+        //
+        // // Load a ticket from the data file
+        // await TicketLoader.DisplayAvailableTicketsAsync();
         // Console.WriteLine();
+        // Console.Write("Enter ticket number (1-5) or press Enter for random: ");
+        // var input = Console.ReadLine()?.Trim();
         // 
-        // await using StreamingRun run = await InProcessExecution.StreamAsync(workflow, sampleTicket);
+        // SupportTicket sampleTicket;
+        // if (string.IsNullOrEmpty(input))
+        // {
+        //     sampleTicket = await TicketLoader.GetRandomTicketAsync();
+        //     Console.WriteLine($"Randomly selected: {sampleTicket.TicketId}");
+        // }
+        // else if (int.TryParse(input, out int index))
+        // {
+        //     sampleTicket = await TicketLoader.GetTicketByIndexAsync(index);
+        // }
+        // else
+        // {
+        //     sampleTicket = await TicketLoader.GetTicketByIdAsync(input) 
+        //         ?? await TicketLoader.GetRandomTicketAsync();
+        // }
+        // Console.WriteLine();
+        //
+        // Console.WriteLine("Incoming Support Ticket:");
+        // Console.WriteLine($"   Ticket ID: {sampleTicket.TicketId}");
+        // Console.WriteLine($"   Customer: {sampleTicket.CustomerName} ({sampleTicket.CustomerId})");
+        // Console.WriteLine($"   Priority: {sampleTicket.Priority}");
+        // Console.WriteLine($"   Subject: {sampleTicket.Subject}");
+        // Console.WriteLine($"   Description: {sampleTicket.Description}");
+        // Console.WriteLine();
+        // Console.WriteLine("Processing ticket through workflow...");
+        // Console.WriteLine();
+        //
+        // await using StreamingRun run = await InProcessExecution.RunStreamingAsync(workflow, sampleTicket);
         // await foreach (WorkflowEvent evt in run.WatchStreamAsync())
         // {
-        //     if (evt is WorkflowOutputEvent output)
+        //     switch (evt)
         //     {
-        //         Console.WriteLine("=== Generated Customer Response ===");
-        //         Console.WriteLine(output.Data);
+        //         case ExecutorCompletedEvent executorComplete:
+        //             Console.WriteLine($"[{executorComplete.ExecutorId}] completed");
+        //             if (executorComplete.Data is string data && !string.IsNullOrWhiteSpace(data))
+        //             {
+        //                 Console.WriteLine($"   Output: {data}");
+        //             }
+        //             Console.WriteLine();
+        //             break;
+        //
+        //         case WorkflowOutputEvent output:
+        //             Console.WriteLine("=== Final Customer Response ===");
+        //             Console.WriteLine(output.Data);
+        //             break;
         //     }
         // }
-        // 
+        //
         // Console.WriteLine();
         // Console.WriteLine("Sequential workflow completed!");
-
-        // Placeholder - REMOVE after uncommenting above
-        Console.WriteLine("Exercise 2 not completed. Please uncomment the code in SequentialWorkflowDemo.cs and Executors.cs");
+        // ========================================================================
+        throw new NotImplementedException("STEP 2: Build the Sequential Workflow");
     }
 }
