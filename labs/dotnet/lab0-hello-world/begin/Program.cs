@@ -1,9 +1,9 @@
-using System.ClientModel;
 using System.Diagnostics;
 using AgentFrameworkDev.Config;
+using Azure.AI.OpenAI;
 using Azure.AI.Projects;
 using Azure.Identity;
-using Microsoft.Agents.AI;
+using OpenAI.Chat;
 
 namespace Lab0;
 
@@ -16,7 +16,7 @@ public record ModelResult(
    bool Success,
    long InputTokens,
    long OutputTokens,
-   long InferenceTokens,
+   long ReasoningTokens,
    long TotalTokens,
    double Seconds,
    string Response,
@@ -36,17 +36,14 @@ public static class Program
 
       // --------- FIRST STEP ----------
       // ASK LAB INSTRUCTOR FOR THE PASSWORD
-      var password = "𝒜𝒮𝒦 𝒴𝒪𝒰ℛ ℒ𝒜ℬ ℐ𝒩𝒮𝒯ℛ𝒰𝒞𝒯𝒪ℛ ℱ𝒪ℛ 𝒯ℋℰ 𝒫𝒜𝒮𝒮𝒲𝒪ℛ𝒟";
-
-      // LAB STEP 1: CHANGE THE PASSWORD
-   //  password = "replace this with the real password given by your lab instructor";
 
       var configger = new ConfigureLabKeys(password, verbose);
       configger.RandomizeDecryptDistribute(overwriteExisting: force);
 
-      // Load configuration and create client using the factory
+      // Load configuration and create clients
       var config = FoundryClientFactory.GetConfiguration();
       var aiProjectClient = FoundryClientFactory.CreateProjectClient(config);
+      var azureOpenAIClient = await FoundryClientFactory.CreateOpenAIClientAsync(config);
 
       Console.WriteLine("Welcome to Agent Framework Dev Day!");
       Console.WriteLine("===================================");
@@ -58,7 +55,7 @@ public static class Program
 
       // Get all chat-capable models (filter out embedding models)
       var chatModels = await GetChatCompletionModelsAsync(aiProjectClient, verbose);
-      
+
       if (chatModels.Count == 0)
       {
          Console.WriteLine("No chat-capable model deployments found.");
@@ -70,10 +67,10 @@ public static class Program
 
       // Run each model sequentially and collect results
       var results = new List<ModelResult>();
-      
+
       foreach (var (deploymentName, modelName) in chatModels)
       {
-         var result = await RunModelAsync(aiProjectClient, deploymentName, modelName, verbose);
+         var result = await RunModelAsync(azureOpenAIClient, deploymentName, modelName, verbose);
          results.Add(result);
       }
 
@@ -131,11 +128,11 @@ public static class Program
    }
 
    /// <summary>
-   /// Runs a single model with the prompt and returns metrics.
+   /// Runs a single model with the prompt using a local Microsoft Agent Framework agent.
    /// </summary>
    private static async Task<ModelResult> RunModelAsync(
-      AIProjectClient client, 
-      string deploymentName, 
+      AzureOpenAIClient openAiClient,
+      string deploymentName,
       string modelName,
       bool verbose)
    {
@@ -144,28 +141,27 @@ public static class Program
          Console.WriteLine($"Running: {deploymentName} ({modelName})...");
       }
 
-      AIAgent? agent = null;
       try
       {
-         // Create agent for this model - keep name short (max 63 chars)
-         var agentName = $"Cmp{Guid.NewGuid().ToString("N")[..8]}";
-         agent = await client.CreateAIAgentAsync(
-            name: agentName,
-            model: deploymentName,
-            instructions: AgentInstructions
+         // Create a LOCAL agent using the Microsoft Agent Framework
+         var chatClient = openAiClient.GetChatClient(deploymentName);
+         var agent = chatClient.AsAIAgent(
+            instructions: AgentInstructions,
+            name: $"Cmp-{deploymentName}"
          );
 
-         // Run and time the prompt
+         // Create a session and run the prompt
+         var session = await agent.CreateSessionAsync();
          var stopwatch = Stopwatch.StartNew();
-         var response = await agent.RunAsync(Prompt);
+         var response = await agent.RunAsync(Prompt, session);
          stopwatch.Stop();
 
-         var inputTokens = response.Usage?.InputTokenCount ?? 0;
-         var outputTokens = response.Usage?.OutputTokenCount ?? 0;
-         var inferenceTokens = response.Usage?.ReasoningTokenCount ?? 0;
-         var totalTokens = response.Usage?.TotalTokenCount ?? 0;
+         var inputTokens = (long)(response.Usage?.InputTokenCount ?? 0);
+         var outputTokens = (long)(response.Usage?.OutputTokenCount ?? 0);
+         var totalTokens = (long)(response.Usage?.TotalTokenCount ?? 0);
+         var reasoningTokens = (long)(response.Usage?.ReasoningTokenCount ?? 0);
          var seconds = stopwatch.Elapsed.TotalSeconds;
-         var responseText = response.ToString()?.Trim() ?? "";
+         var responseText = response.Text?.Trim() ?? "";
 
          if (verbose)
          {
@@ -178,30 +174,10 @@ public static class Program
             Success: true,
             InputTokens: inputTokens,
             OutputTokens: outputTokens,
-            InferenceTokens: inferenceTokens,
+            ReasoningTokens: reasoningTokens,
             TotalTokens: totalTokens,
             Seconds: seconds,
             Response: responseText
-         );
-      }
-      catch (ClientResultException ex)
-      {
-         var errorMsg = ex.Message;
-         if (verbose)
-         {
-            Console.WriteLine($"  ERROR: {errorMsg}");
-         }
-         return new ModelResult(
-            DeploymentName: deploymentName,
-            ModelName: modelName,
-            Success: false,
-            InputTokens: 0,
-            OutputTokens: 0,
-            InferenceTokens: 0,
-            TotalTokens: 0,
-            Seconds: 0,
-            Response: "",
-            ErrorMessage: errorMsg
          );
       }
       catch (Exception ex)
@@ -217,27 +193,12 @@ public static class Program
             Success: false,
             InputTokens: 0,
             OutputTokens: 0,
-            InferenceTokens: 0,
+            ReasoningTokens: 0,
             TotalTokens: 0,
             Seconds: 0,
             Response: "",
             ErrorMessage: errorMsg
          );
-      }
-      finally
-      {
-         // Cleanup agent
-         if (agent != null)
-         {
-            try
-            {
-               await client.Agents.DeleteAgentAsync(agent.Name);
-            }
-            catch
-            {
-               // Ignore cleanup errors
-            }
-         }
       }
    }
 
@@ -263,7 +224,7 @@ public static class Program
          if (result.Success)
          {
             var response = TruncateResponse(result.Response, maxResponseLen);
-            Console.WriteLine($"{model}  {result.InputTokens,5}  {result.OutputTokens,5}  {result.InferenceTokens,6}  {result.TotalTokens,6}  {result.Seconds,6:F2}  {response}");
+            Console.WriteLine($"{model}  {result.InputTokens,5}  {result.OutputTokens,5}  {result.ReasoningTokens,6}  {result.TotalTokens,6}  {result.Seconds,6:F2}  {response}");
          }
          else
          {
@@ -283,13 +244,13 @@ public static class Program
    {
       if (string.IsNullOrEmpty(response))
          return "";
-      
+
       // Replace newlines with spaces for table display
       response = response.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ");
-      
+
       if (response.Length <= maxLength)
          return response;
-      
+
       return response[..(maxLength - 3)] + "...";
    }
 }
