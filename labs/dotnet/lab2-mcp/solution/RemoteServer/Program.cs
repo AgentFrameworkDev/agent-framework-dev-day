@@ -11,7 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 // Add API controllers (REST API endpoints)
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // Register the in-memory stores (used by REST API controllers)
 builder.Services.AddSingleton<TicketStore>();
