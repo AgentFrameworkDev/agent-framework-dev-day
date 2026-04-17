@@ -7,11 +7,11 @@ Before entering a specific lab folder:
 3. install common dependencies (one line)
 4. `cd` into a lab folder and start coding!
 
-### Tip: one line version for Mac
+### Tip: one line version for Mac/Linux
 
+```console
 python3.13 -m venv .venv ; source .venv/bin/activate ; pip install -r requirements.txt
-
-python -m venv .venv ; source .venv/bin/activate ; pip install -r requirements.txt
+```
 
 ## Accept VS Code's offer to select the new Python environment
 
@@ -37,7 +37,7 @@ python -m venv .venv
 
 # now install all dependencies
 pip install -r requirements.txt
-```console
+```
 
 ## Windows (PowerShell)
 
@@ -57,7 +57,7 @@ pip install -r requirements.txt
 If you get an error about execution policies, consider this:
 
 ```PowerShell
-CopySet-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 ## Mac, Linux
@@ -78,7 +78,7 @@ pip install -r requirements.txt
 ## Start Labs
 
 ```console
-cd lab0
+cd lab0-hello-world
 python main.py
 ```
 

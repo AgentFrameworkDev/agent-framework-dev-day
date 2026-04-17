@@ -19,32 +19,19 @@ For hands-on exercises, see **[begin/EXERCISES.md](begin/EXERCISES.md)**.
 
 ```
 lab2-workflow/
-├── program.py                    # Main entry point
 ├── README.md                     # This file
-├── begin/                          # Lab exercises (incomplete code)
+├── begin/                        # Lab exercises (incomplete code)
 │   ├── EXERCISES.md              # Step-by-step exercises
-│   └── ...                       # Code to complete
-├── solution/                     # Complete working solution
-├── workflow-concepts.ipynb       # Interactive notebook with concepts
-└── workflow_lab/                 # Main package
-    ├── __init__.py
-    ├── common/                   # Shared components
-    │   ├── __init__.py
-    │   ├── support_ticket.py     # SupportTicket model
-    │   └── azure_openai_client_factory.py  # Azure OpenAI client
-    ├── sequential/               # Sequential workflow
-    │   ├── __init__.py
-    │   ├── executors.py          # Executor classes
-    │   └── demo.py               # SequentialWorkflowDemo
-    ├── concurrent/               # Concurrent workflow
-    │   ├── __init__.py
-    │   ├── executors.py          # Executor classes
-    │   └── demo.py               # ConcurrentWorkflowDemo
-    └── human_in_the_loop/        # Human-in-the-loop workflow
-        ├── __init__.py
-        ├── models.py             # Review models
-        ├── executors.py          # Executor classes
-        └── demo.py               # HumanInTheLoopWorkflowDemo
+│   ├── program.py                # Main entry point
+│   ├── workflow-concepts.ipynb   # Interactive notebook with concepts
+│   ├── common/                   # Shared components
+│   │   ├── __init__.py
+│   │   ├── support_ticket.py     # SupportTicket model
+│   │   └── azure_openai_client_factory.py  # Azure OpenAI client
+│   ├── sequential/               # Sequential workflow
+│   ├── concurrent_workflow/      # Concurrent workflow
+│   └── human_in_the_loop/        # Human-in-the-loop workflow
+└── solution/                     # Complete working solution
 ```
 
 ## 🎯 Workflow Patterns
@@ -162,6 +149,7 @@ No additional configuration needed when running in Azure.
 
 ### Main Menu (Interactive)
 ```bash
+cd begin
 python program.py
 ```
 

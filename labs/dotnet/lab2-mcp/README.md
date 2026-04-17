@@ -1,4 +1,4 @@
-# Lab 3 - Model Context Protocol (MCP) Workshop
+# Lab 2 - Model Context Protocol (MCP) Workshop
 
 This lab demonstrates how to build and consume MCP (Model Context Protocol) servers using Microsoft Agent Framework in .NET 10.
 
@@ -12,14 +12,14 @@ This lab demonstrates how to build and consume MCP (Model Context Protocol) serv
 
 To explore MCP concepts interactively, open and run the Jupyter notebook:
 ```bash
-cd lab
+cd begin
 jupyter notebook mcp-concepts.ipynb
 ```
-Or open `lab/mcp-concepts.ipynb` directly in VS Code.
+Or open `begin/mcp-concepts.ipynb` directly in VS Code.
 
 ## �📝 Lab Exercises
 
-For hands-on exercises, see **[lab/EXERCISES.md](lab/EXERCISES.md)**.
+For hands-on exercises, see **[begin/EXERCISES.md](begin/EXERCISES.md)**.
 
 ## Architecture
 
@@ -51,15 +51,16 @@ For hands-on exercises, see **[lab/EXERCISES.md](lab/EXERCISES.md)**.
 ## Project Structure
 
 ```
-lab3-mcp/
+lab2-mcp/
 +-- McpLab.sln
 +-- README.md
-+-- MCP-Concepts.ipynb           # Educational notebook
-+-- appsettings.Local.json       # Shared config (in parent dotnet folder)
-+-- McpAgentClient/              # AI Agent that consumes MCP servers
-+-- McpLocal/                    # Local MCP Server (.NET, STDIO)
-+-- McpBridge/                   # MCP Bridge (HTTP/SSE -> REST API)
-+-- RemoteServer/                # REST API backend
++-- begin/                           # Lab exercises (incomplete code)
++-- solution/                        # Complete working solution
++-- begin/MCP-Concepts.ipynb         # Educational notebook
++-- begin/McpAgentClient/            # AI Agent that consumes MCP servers
++-- begin/McpLocal/                  # Local MCP Server (.NET, STDIO)
++-- begin/McpBridge/                 # MCP Bridge (HTTP/SSE -> REST API)
++-- begin/RemoteServer/              # REST API backend
 ```
 
 ## Components

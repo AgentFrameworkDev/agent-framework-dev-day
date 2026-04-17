@@ -9,14 +9,14 @@ Example from `.../dotnet` directory.
 ```console
 pwd
 # .../agent-framework-dev-day/labs/dotnet
-cd lab0/lab
+cd lab0-hello-world/begin
 code .
 ```
 
 From there you can edit, debug, etc. When done, go to next.
 
 ```console
-cd ../../lab1/lab
+cd ../../lab1-safety/begin
 code .
 ```
 
