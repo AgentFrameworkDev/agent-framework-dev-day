@@ -12,7 +12,7 @@ In this lab, you'll build three AI workflow patterns for a **Customer Support Ti
 
 ## Prerequisites
 
-- Python 3.10+
+- Python 3.13+
 - Azure OpenAI resource with a deployed model
 - Environment configured (`.env` file in the `python/` folder)
 
@@ -263,13 +263,24 @@ The menu should display. Try running each workflow demo (1, 2, 3) and quit with 
 ## Troubleshooting
 
 ### "AZURE_OPENAI_ENDPOINT is required"
-Create a `.env` file in the `python/` folder:
+> ⚠️ **If you already have a `python/.env` file**, skip creating it — just make sure the keys below have valid values.
+
+Create or update the `.env` file in the `python/` folder. Both formats are supported:
+
+**JSON format:**
 ```json
 {
   "AZURE_OPENAI_ENDPOINT": "https://your-resource.openai.azure.com",
   "AZURE_OPENAI_API_KEY": "your-key",
   "AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-4o-mini"
 }
+```
+
+**KEY=VALUE format:**
+```
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+AZURE_OPENAI_API_KEY=your-key
+AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4o-mini
 ```
 
 ### "Exercise X not completed"

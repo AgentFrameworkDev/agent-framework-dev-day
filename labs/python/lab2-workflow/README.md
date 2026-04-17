@@ -107,7 +107,7 @@ Pauses execution for human input, approval, or oversight:
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.10 or later
+- Python 3.13 or later
 - Azure OpenAI resource with deployed model
 
 ### Installation

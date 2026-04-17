@@ -11,7 +11,7 @@ Welcome to the Model Context Protocol (MCP) Workshop! In this hands-on lab, you'
 
 ## Prerequisites
 
-- Python 3.10+ installed
+- Python 3.13+ installed
 - Azure OpenAI resource with deployment
 - VS Code with Python extension
 - Virtual environment activated
@@ -58,7 +58,7 @@ pip install -r requirements.txt
 
 ## Exercise 1: Configure Azure OpenAI Credentials
 
-**Objective:** Set up the Azure OpenAI configuration via a JSON-based .env file and uncomment the configuration code in the agent client.
+**Objective:** Set up the Azure OpenAI configuration via a .env file and uncomment the configuration code in the agent client.
 
 ### Current State in Begin Folder
 The code in `mcp_agent_client/main.py` has:
@@ -70,14 +70,24 @@ The code in `mcp_agent_client/main.py` has:
 
 ### Step 1.1: Create the .env file
 
-Create or update the file at `labs/python/.env` with JSON format:
+> ⚠️ **If you already have a `labs/python/.env` file**, skip creating it — just make sure the keys below have valid values.
 
+Create or update the file at `labs/python/.env`. Both formats are supported:
+
+**JSON format:**
 ```json
 {
     "AZURE_OPENAI_ENDPOINT": "https://your-resource-name.openai.azure.com/",
     "AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-4o-mini",
     "AZURE_OPENAI_API_KEY": "your-api-key-here"
 }
+```
+
+**KEY=VALUE format:**
+```
+AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4o-mini
+AZURE_OPENAI_API_KEY=your-api-key-here
 ```
 
 **Notes:**
@@ -154,7 +164,7 @@ If you see your actual endpoint (not the placeholder), Exercise 1 is complete!
 
 **Common Errors:**
 - `No .env file found` → Create the .env file at `labs/python/.env`
-- `Warning: Failed to load .env file` → Check your .env file has valid JSON format
+- `Warning: Failed to load .env file` → Check your .env file has valid JSON or KEY=VALUE format
 - Azure tenant mismatch → Make sure you have `AZURE_OPENAI_API_KEY` in your .env file
 
 ---

@@ -91,7 +91,7 @@ lab2-mcp/
 
 ### Prerequisites
 
-- Python 3.10+
+- Python 3.13+
 - Azure OpenAI resource with a deployed model (for AI demo)
 
 ### Installation
