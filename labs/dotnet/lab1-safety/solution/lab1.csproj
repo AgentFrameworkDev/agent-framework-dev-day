@@ -10,13 +10,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.AI.OpenAI" Version="*-*" />
     <PackageReference Include="Azure.AI.Projects" Version="*-*" />
     <PackageReference Include="Azure.Identity" Version="*-*" />
-    <PackageReference Include="Microsoft.Agents.AI.AzureAI" Version="*-*" />
+    <PackageReference Include="Microsoft.Agents.AI" Version="*-*" />
+    <PackageReference Include="Microsoft.Agents.AI.Declarative" Version="*-*" />
+    <PackageReference Include="Microsoft.Agents.AI.Foundry" Version="*-*" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.*-*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.*-*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.*-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="movie-trivia-agent.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -1,81 +1,74 @@
-using Azure.AI.OpenAI;
+using System.ClientModel;
 using Azure.AI.Projects;
 using Azure.Core;
 using Azure.Identity;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
-using OpenAI.Chat;
-using OpenAI.Embeddings;
+using OpenAI;
 
 namespace AgentFrameworkDev.Config;
 
 /// <summary>
-/// Configuration details for creating Microsoft Foundry clients and Azure Search.
+/// Configuration details for creating Microsoft Foundry clients.
 /// </summary>
 public sealed record FoundryClientConfiguration(
     Uri Endpoint,
-    string DeploymentName,
     TokenCredential Credential,
-    string? EmbeddingDeploymentName = null,
-    string? SearchEndpoint = null,
-    string? SearchApiKey = null,
-    string? SearchIndexName = null
-);
+    Uri? AzureOpenAIEndpoint = null,
+    string? AzureOpenAIApiKey = null,
+    string? AzureOpenAIChatDeploymentName = null)
+{
+    public bool HasAzureOpenAIKeyAuth =>
+        AzureOpenAIEndpoint is not null &&
+        !string.IsNullOrWhiteSpace(AzureOpenAIApiKey) &&
+        !string.IsNullOrWhiteSpace(AzureOpenAIChatDeploymentName);
+}
 
 /// <summary>
 /// Factory for creating Microsoft Foundry clients with automatic configuration discovery.
-/// Searches parent directories for appsettings.Local.json and supports environment variable overrides.
+/// Prefers the repo-local appsettings.Local.json used by the labs and falls back to parent-directory discovery.
 /// </summary>
 public static class FoundryClientFactory
 {
     private const string DefaultConfigFileName = "appsettings.Local.json";
 
     /// <summary>
-    /// Loads configuration from appsettings.Local.json (searching parent directories)
-    /// and environment variables. Returns details needed to create any Foundry client.
+    /// Loads configuration from the repo-local appsettings.Local.json used by the dotnet labs.
+    /// Environment variables are still available as fallback values, but the JSON file wins when both are present.
+    /// Returns details needed to create any Foundry client.
     /// </summary>
     /// <param name="configFileName">The configuration file name to search for. Defaults to appsettings.Local.json.</param>
     /// <returns>Configuration containing endpoint, deployment name, and credential.</returns>
     /// <exception cref="InvalidOperationException">Thrown when required configuration values are missing.</exception>
     public static FoundryClientConfiguration GetConfiguration(string configFileName = DefaultConfigFileName)
     {
-        var basePath = FindConfigDirectory(configFileName)
-            ?? throw new InvalidOperationException(
-                $"Could not find {configFileName} in current directory or any parent directory.");
+        var configPath = ResolveConfigPath(configFileName);
+        var basePath = Path.GetDirectoryName(configPath)!;
 
-        var configuration = new ConfigurationBuilder()
+        var configurationBuilder = new ConfigurationBuilder()
             .SetBasePath(basePath)
-            .AddJsonFile(configFileName, optional: false, reloadOnChange: false)
             .AddEnvironmentVariables()
-            .Build();
+            .AddJsonFile(Path.GetFileName(configPath), optional: false, reloadOnChange: false);
+
+        var configuration = configurationBuilder.Build();
 
         var endpoint = configuration["AZURE_AI_PROJECT_ENDPOINT"]
             ?? throw new InvalidOperationException(
-                "Azure AI endpoint not configured. Set AZURE_AI_PROJECT_ENDPOINT in config or environment.");
-
-        var deploymentName = configuration["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
-            ?? throw new InvalidOperationException(
-                "Azure AI deployment not configured. Set AZURE_AI_MODEL_DEPLOYMENT_NAME in config or environment.");
+                $"Azure AI endpoint not configured in {configPath}.");
 
         var credential = CreateCredential(configuration);
-        var embeddingDeployment = configuration["AZURE_AI_EMBEDDING_DEPLOYMENT_NAME"];
-
-        // Azure Search configuration (optional - check both flat and nested keys)
-        var searchEndpoint = configuration["AZURE_SEARCH_ENDPOINT"] 
-            ?? configuration["AzureSearch:Endpoint"];
-        var searchApiKey = configuration["AZURE_SEARCH_API_KEY"] 
-            ?? configuration["AzureSearch:ApiKey"];
-        var searchIndexName = configuration["AZURE_SEARCH_INDEX_NAME"] 
-            ?? configuration["AzureSearch:IndexName"];
+        var azureOpenAIEndpoint = TryGetUri(configuration["AZURE_OPENAI_ENDPOINT"]);
+        var azureOpenAIApiKey = configuration["AZURE_OPENAI_API_KEY"];
+        var azureOpenAIChatDeploymentName = configuration["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"]
+            ?? configuration["AZURE_OPENAI_DEPLOYMENT_NAME"]
+            ?? configuration["AZURE_AI_MODEL_DEPLOYMENT_NAME"];
 
         return new FoundryClientConfiguration(
             new Uri(endpoint),
-            deploymentName,
             credential,
-            embeddingDeployment,
-            searchEndpoint,
-            searchApiKey,
-            searchIndexName
-        );
+            azureOpenAIEndpoint,
+            azureOpenAIApiKey,
+            azureOpenAIChatDeploymentName);
     }
 
     /// <summary>
@@ -90,86 +83,33 @@ public static class FoundryClientFactory
     }
 
     /// <summary>
-    /// Retrieves the Azure OpenAI endpoint from the Foundry Project's connections.
+    /// Creates an IChatClient for the local declarative agent.
+    /// Prefers Azure OpenAI API-key auth from the shared lab config and falls back to Foundry project auth.
     /// </summary>
-    /// <param name="config">Optional configuration. If null, calls GetConfiguration() to load automatically.</param>
-    /// <returns>The Azure OpenAI endpoint URI.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when no Azure OpenAI connection is found.</exception>
-    public static Task<Uri> GetOpenAIEndpointAsync(FoundryClientConfiguration? config = null)
+    public static IChatClient CreateChatClient(FoundryClientConfiguration? config = null)
     {
         config ??= GetConfiguration();
-        var projectClient = new AIProjectClient(config.Endpoint, config.Credential);
 
-        // Get the Azure OpenAI connection using the client type name
-        var connection = projectClient.GetConnection(typeof(AzureOpenAIClient).FullName!);
-
-        if (!connection.TryGetLocatorAsUri(out Uri? uri) || uri is null)
+        if (config.HasAzureOpenAIKeyAuth)
         {
-            throw new InvalidOperationException(
-                "No Azure OpenAI connection found in the Foundry Project. " +
-                "Ensure an Azure OpenAI connection is configured in your Azure AI Foundry project.");
+            var openAIClient = new OpenAIClient(
+                new ApiKeyCredential(config.AzureOpenAIApiKey!),
+                new OpenAIClientOptions
+                {
+                    Endpoint = EnsureAzureOpenAIV1Endpoint(config.AzureOpenAIEndpoint!)
+                });
+
+            return openAIClient
+                .GetChatClient(config.AzureOpenAIChatDeploymentName!)
+                .AsIChatClient();
         }
 
-        // Return just the host portion as the endpoint
-        return Task.FromResult(new Uri($"https://{uri.Host}"));
-    }
-
-    /// <summary>
-    /// Creates an AzureOpenAIClient using Foundry credentials.
-    /// Automatically discovers the Azure OpenAI endpoint from the project's connections.
-    /// </summary>
-    /// <param name="config">Optional configuration. If null, calls GetConfiguration() to load automatically.</param>
-    /// <returns>A configured AzureOpenAIClient ready for use.</returns>
-    public static async Task<AzureOpenAIClient> CreateOpenAIClientAsync(FoundryClientConfiguration? config = null)
-    {
-        config ??= GetConfiguration();
-        var openAiEndpoint = await GetOpenAIEndpointAsync(config);
-        return new AzureOpenAIClient(openAiEndpoint, config.Credential);
-    }
-
-    /// <summary>
-    /// Creates a ChatClient for the configured chat deployment.
-    /// Automatically discovers the Azure OpenAI endpoint from the Foundry project.
-    /// </summary>
-    /// <param name="config">Optional configuration. If null, calls GetConfiguration() to load automatically.</param>
-    /// <returns>A configured ChatClient ready for use.</returns>
-    public static async Task<ChatClient> CreateChatClientAsync(FoundryClientConfiguration? config = null)
-    {
-        config ??= GetConfiguration();
-        var client = await CreateOpenAIClientAsync(config);
-        return client.GetChatClient(config.DeploymentName);
-    }
-
-    /// <summary>
-    /// Creates an EmbeddingClient for the configured embedding deployment.
-    /// Automatically discovers the Azure OpenAI endpoint from the Foundry project.
-    /// Falls back to the main deployment if no embedding deployment is configured.
-    /// </summary>
-    /// <param name="config">Optional configuration. If null, calls GetConfiguration() to load automatically.</param>
-    /// <returns>A configured EmbeddingClient ready for use.</returns>
-    public static async Task<EmbeddingClient> CreateEmbeddingClientAsync(FoundryClientConfiguration? config = null)
-    {
-        config ??= GetConfiguration();
-        var client = await CreateOpenAIClientAsync(config);
-        var embeddingDeployment = config.EmbeddingDeploymentName ?? config.DeploymentName;
-        return client.GetEmbeddingClient(embeddingDeployment);
-    }
-
-    /// <summary>
-    /// Validates that Azure Search configuration is present.
-    /// </summary>
-    /// <param name="config">The configuration to validate.</param>
-    /// <exception cref="InvalidOperationException">Thrown when required Azure Search values are missing.</exception>
-    public static void ValidateSearchConfiguration(FoundryClientConfiguration config)
-    {
-        if (string.IsNullOrWhiteSpace(config.SearchEndpoint))
-            throw new InvalidOperationException("AZURE_SEARCH_ENDPOINT configuration is required");
-
-        if (string.IsNullOrWhiteSpace(config.SearchApiKey))
-            throw new InvalidOperationException("AZURE_SEARCH_API_KEY configuration is required");
-
-        if (string.IsNullOrWhiteSpace(config.SearchIndexName))
-            throw new InvalidOperationException("AZURE_SEARCH_INDEX_NAME configuration is required");
+#pragma warning disable OPENAI001
+        return CreateProjectClient(config)
+            .GetProjectOpenAIClient()
+            .GetResponsesClient()
+            .AsIChatClient();
+#pragma warning restore OPENAI001
     }
 
     private static TokenCredential CreateCredential(IConfiguration configuration)
@@ -186,6 +126,46 @@ public static class FoundryClientFactory
         }
 
         return new DefaultAzureCredential();
+    }
+
+    private static Uri? TryGetUri(string? value) =>
+        Uri.TryCreate(value, UriKind.Absolute, out var uri) ? uri : null;
+
+    private static Uri EnsureAzureOpenAIV1Endpoint(Uri endpoint)
+    {
+        if (endpoint.AbsolutePath.Equals("/openai/v1", StringComparison.OrdinalIgnoreCase) ||
+            endpoint.AbsolutePath.Equals("/openai/v1/", StringComparison.OrdinalIgnoreCase))
+        {
+            return endpoint;
+        }
+
+        return new Uri(endpoint, "/openai/v1/");
+    }
+
+    private static string ResolveConfigPath(string fileName)
+    {
+        var preferredPaths = new[]
+        {
+            Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", fileName)),
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", fileName))
+        };
+
+        foreach (var preferredPath in preferredPaths.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (File.Exists(preferredPath))
+            {
+                return preferredPath;
+            }
+        }
+
+        var discoveredBasePath = FindConfigDirectory(fileName);
+        if (discoveredBasePath is not null)
+        {
+            return Path.Combine(discoveredBasePath, fileName);
+        }
+
+        throw new InvalidOperationException(
+            $"Could not find {fileName}. Expected the lab config at ../../{fileName} relative to the project directory.");
     }
 
     private static string? FindConfigDirectory(string fileName)

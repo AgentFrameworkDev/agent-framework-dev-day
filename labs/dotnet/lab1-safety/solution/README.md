@@ -1,41 +1,30 @@
-# Lab 1 - Model Safety Comparison
+# Lab 1 - Solution
 
-This lab explores how AI safety guardrails affect model responses.
+This is the completed version of the Declarative Movie Trivia Agent lab.
 
-STEP 1:
+## What was fixed
 
-Run `dotnet run` and try the default prompt (just press Enter).
-Observe how the two models respond differently to the same input.
+The `movie-trivia-agent.yaml` in the `begin` folder had intentionally broken settings:
 
-STEP 2:
+- `temperature: 0.001` - Too low, producing rigid/deterministic output
+- `maxOutputTokens: 10` - Far too small, causing truncated responses
 
-Try your own prompts! Compare responses between:
+This solution sets:
 
-- **gpt-4.1-mini-safety** - Model with safety guardrails enabled
-- **gpt-4.1-mini-no-safety** - Model without safety guardrails
+- `temperature: 0.7` - Good balance of creativity and coherence for trivia
+- `maxOutputTokens: 500` - Plenty of room for questions and explanations
+- `model: gpt-4.1-max-safety` - Uses the stricter RAI guardrails so students can observe what gets blocked
 
-## Guardrails
+## Safety model variants
 
-The "safety" model has extra guardrails (see demo) and the "no-safety" model has some default guardrails turned down or off.
+- `gpt-4.1-min-safety` - Guardrails dialed down (least restrictive)
+- `gpt-4.1-max-safety` - Guardrails at maximum (most restrictive)
 
-## Things to notice
-
-1. Does the safety model refuse certain requests? See "Examples" below for ideas.
-2. Does safety add response time?
-3. Try edge cases - what triggers safety guardrails?
-4. When you substitute other models that have the "default" safety settings (in between these two) - what happens?
-
-## Resources
-
-- [Microsoft Foundry Guardrails](https://learn.microsoft.com/en-us/azure/ai-foundry/guardrails/guardrails-overview?view=foundry)
-
-## Examples you can try
+Switch between them in the YAML to compare behavior with sensitive prompts (profanity, PII, harmful content).
 
 ### Profanity
 
-Can be deploy via curated blocklist.
-
-You know the words and phrases. Shhh... Be discreet.
+Can be blocked via curated blocklist.
 
 ### SSN or similar
 
@@ -44,3 +33,17 @@ You know the words and phrases. Shhh... Be discreet.
 ### Other PII
 
 ![PII](pii.png)
+
+## Run
+
+```bash
+dotnet run
+```
+
+## Resources
+
+- [Microsoft Foundry Responsible AI Overview](https://learn.microsoft.com/en-us/azure/foundry/responsible-use-of-ai-overview)
+- [Prompt Engineering Best Practices](https://help.openai.com/en/articles/6654000-best-practices-for-prompt-engineering-with-the-openai-api)
+- [Temperature & Top-p Cheat Sheet](https://community.openai.com/t/cheat-sheet-mastering-temperature-and-top-p-in-chatgpt-api/172683)
+- [OpenAI Tokenizer](https://platform.openai.com/tokenizer)
+- [Microsoft Foundry Guardrails](https://learn.microsoft.com/en-us/azure/ai-foundry/guardrails/guardrails-overview?view=foundry)

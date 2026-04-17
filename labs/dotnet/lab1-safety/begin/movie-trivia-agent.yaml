@@ -1,0 +1,16 @@
+kind: Prompt
+name: MovieTriviaQuizAgent
+# The "description" would matter a lot more if this was a SKILL...
+description: Asks movie trivia questions and checks whether the answer is right.
+# The "instructions" is not THE prompt, but higher-level or second-layer prompt
+instructions: |
+  You are a movie trivia quiz agent. You pose trivia questions about movies and check if the answer is right. For example, the Best Picture of 2000.
+model:
+  # https://learn.microsoft.com/en-us/azure/foundry/responsible-use-of-ai-overview
+  id: gpt-4.1-min-safety
+  # id: gpt-4.1-max-safety # try cursing, bomb-making to trigger the RAI
+  options:
+    # https://help.openai.com/en/articles/6654000-best-practices-for-prompt-engineering-with-the-openai-api
+    # https://community.openai.com/t/cheat-sheet-mastering-temperature-and-top-p-in-chatgpt-api/172683
+    temperature: 0.001 # 
+    maxOutputTokens: 10 # 10, 25, 100, 500 - https://platform.openai.com/tokenizer
