@@ -9,6 +9,8 @@ Before entering a specific lab folder:
 
 ### Tip: one line version for Mac
 
+python3.13 -m venv .venv ; source .venv/bin/activate ; pip install -r requirements.txt
+
 python -m venv .venv ; source .venv/bin/activate ; pip install -r requirements.txt
 
 ## Accept VS Code's offer to select the new Python environment
