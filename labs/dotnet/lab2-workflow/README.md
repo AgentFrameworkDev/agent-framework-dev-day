@@ -1,4 +1,4 @@
-# Lab 4 - Workflow Lab
+# Lab 2 - Workflow Lab
 
 This lab demonstrates three key workflow patterns using **Microsoft.Agents.AI.Workflows** in .NET 10, all using a **Customer Support Ticket System** as the example scenario.
 
@@ -12,14 +12,14 @@ This lab demonstrates three key workflow patterns using **Microsoft.Agents.AI.Wo
 
 To explore workflow concepts interactively, open and run the Jupyter notebook:
 ```bash
-cd lab
+cd begin
 jupyter notebook workflow-concepts.ipynb
 ```
-Or open `lab/workflow-concepts.ipynb` directly in VS Code.
+Or open `begin/workflow-concepts.ipynb` directly in VS Code.
 
 ## �📝 Lab Exercises
 
-For hands-on exercises, see **[lab/EXERCISES.md](lab/EXERCISES.md)**.
+For hands-on exercises, see **[begin/EXERCISES.md](begin/EXERCISES.md)**.
 
 ## 🏗️ Architecture
 

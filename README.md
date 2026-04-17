@@ -38,7 +38,7 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 | Lab | Focus | Supplemental docs |
 | --- | ------ | ------------------ |
 | lab0-hello-world | Validate SDK install, run first Agent Framework project, explore solution vs. begin folders | [labs/dotnet/lab0-hello-world/README.md](labs/dotnet/lab0-hello-world/README.md) |
-| lab1-basic-training | Core agent patterns and incremental exercises (instructions inline in `begin/`; no README yet) | _README not provided_ |
+| lab1-safety | Declarative Movie Trivia Agent with safety/RAI exploration – compare `gpt-4.1-min-safety` vs `gpt-4.1-max-safety` deployments | [labs/dotnet/lab1-safety/begin/README.md](labs/dotnet/lab1-safety/begin/README.md) |
 | lab2-mcp | Build local/remote MCP servers, run `mcp-concepts.ipynb`, wire up `McpAgentClient` | [labs/dotnet/lab2-mcp/README.md](labs/dotnet/lab2-mcp/README.md) |
 | lab2-workflow | Implement sequential, concurrent, and human-in-the-loop workflows with `Microsoft.Agents.AI.Workflows` | [labs/dotnet/lab2-workflow/README.md](labs/dotnet/lab2-workflow/README.md) |
 | lab3-agentic-rag | Agentic RAG scenarios with Azure AI Search and Agent Framework orchestration | [labs/dotnet/lab3-agentic-rag/begin/README.md](labs/dotnet/lab3-agentic-rag/begin/README.md) |
@@ -50,7 +50,7 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 | Lab | Focus | Supplemental docs |
 | --- | ------ | ------------------ |
 | lab0-hello-world | Environment smoke test and first Python agent (instructions inside `begin/`) | _README not provided_ |
-| lab1-safety | Progressive exercises reinforcing Agent Framework primitives (see `begin/` folder) | _README not provided_ |
+| lab1-safety | Declarative Movie Trivia Agent with safety/RAI exploration – compare `gpt-4.1-min-safety` vs `gpt-4.1-max-safety` deployments | [labs/python/lab1-safety/begin/README.md](labs/python/lab1-safety/begin/README.md) |
 | lab2-mcp | Python MCP servers/clients plus `mcp-concepts.ipynb` | [labs/python/lab2-mcp/README.md](labs/python/lab2-mcp/README.md) |
 | lab2-workflow | Workflow patterns implemented with Python executors and notebooks | [labs/python/lab2-workflow/README.md](labs/python/lab2-workflow/README.md) |
 | lab3-agentic-rag | Agentic RAG build-out leveraging Azure AI Search tooling | [labs/python/lab3-agentic-rag/begin/README.md](labs/python/lab3-agentic-rag/begin/README.md) |

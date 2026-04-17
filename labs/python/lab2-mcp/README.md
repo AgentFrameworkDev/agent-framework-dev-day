@@ -53,17 +53,16 @@ lab2-mcp/
 ├── README.md
 ├── begin/                          # Lab exercises (incomplete code)
 │   ├── EXERCISES.md              # Step-by-step exercises
-│   └── ...                       # Code to complete
-├── solution/                     # Complete working solution
-├── mcp-concepts.ipynb            # Educational notebook
-├── mcp_agent_client/             # AI Agent that consumes MCP servers
-│   └── main.py
-├── mcp_local_server/             # Local MCP Server (STDIO)
-│   └── main.py
-├── mcp_bridge/                   # MCP Bridge (HTTP/SSE → REST API)
-│   └── main.py
-└── mcp_remote_server/            # REST API backend (FastAPI)
-    └── main.py
+│   ├── mcp-concepts.ipynb        # Educational notebook
+│   ├── mcp_agent_client/         # AI Agent that consumes MCP servers
+│   │   └── main.py
+│   ├── mcp_local_server/         # Local MCP Server (STDIO)
+│   │   └── main.py
+│   ├── mcp_bridge/               # MCP Bridge (HTTP/SSE → REST API)
+│   │   └── main.py
+│   └── mcp_remote_server/        # REST API backend (FastAPI)
+│       └── main.py
+└── solution/                     # Complete working solution
 ```
 
 ## Components

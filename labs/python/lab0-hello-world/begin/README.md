@@ -4,7 +4,7 @@ This lab is to make sure you can access Microsoft Foundry resources.
 
 STEP 1:
 
-Look on the whiteboard for a password. Set that password in the code! Then AFTER YOU'VE done the python initialization steps (../README.md) simply run `python main.py`. If you see some output from the Agent specified in Program.cs then you are succeeding.
+Look on the whiteboard for a password. Set that password in the code! Then AFTER YOU'VE done the python initialization steps (../README.md) simply run `python main.py`. If you see some output from the Agent specified in `main.py` then you are succeeding.
 
 STEP 2:
 
