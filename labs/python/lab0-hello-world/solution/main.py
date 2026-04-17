@@ -14,7 +14,7 @@ import sys
 import time
 from dataclasses import dataclass
 
-from agent_framework.azure import AzureAIClient
+from agent_framework.foundry import FoundryChatClient
 from foundry_client_factory import get_configuration, get_chat_completion_models
 from configure_lab_keys import ConfigureLabKeys
 
@@ -51,32 +51,29 @@ async def run_model(
     )
 
     try:
-        async with (
-            AzureAIClient(
-                project_endpoint=config.endpoint,
-                model_deployment_name=deployment_name,
-                credential=config.credential,
-            ).create_agent(
-                name="HelloWorldAgent",
-                instructions="You are a friendly assistant that gives concise responses.",
-            ) as agent,
-        ):
-            start_time = time.perf_counter()
-            response = await agent.run(prompt)
-            result.response_time_seconds = time.perf_counter() - start_time
+        chat_client = FoundryChatClient(
+            project_endpoint=config.endpoint,
+            model=deployment_name,
+            credential=config.credential,
+        )
+        agent = chat_client.as_agent(
+            name="HelloWorldAgent",
+            instructions="You are a friendly assistant that gives concise responses.",
+        )
 
-            result.response_text = response.text
+        start_time = time.perf_counter()
+        response = await agent.run(prompt)
+        result.response_time_seconds = time.perf_counter() - start_time
 
-            # Extract token usage
-            if hasattr(response, 'usage_details') and response.usage_details:
-                usage = response.usage_details
-                result.prompt_tokens = getattr(usage, 'input_token_count', 0) or 0
-                result.completion_tokens = getattr(usage, 'output_token_count', 0) or 0
-                result.total_tokens = getattr(usage, 'total_token_count', 0) or 0
+        result.response_text = response.text
 
-                # Reasoning tokens are in additional_counts
-                if hasattr(usage, 'additional_counts') and usage.additional_counts:
-                    result.reasoning_tokens = usage.additional_counts.get('openai.reasoning_tokens', 0)
+        # Extract token usage (usage_details is a TypedDict)
+        if response.usage_details:
+            usage = response.usage_details
+            result.prompt_tokens = usage.get('input_token_count', 0) or 0
+            result.completion_tokens = usage.get('output_token_count', 0) or 0
+            result.total_tokens = usage.get('total_token_count', 0) or 0
+            result.reasoning_tokens = usage.get('openai.reasoning_tokens', 0) or 0
 
     except Exception as e:
         result.success = False
@@ -148,6 +145,21 @@ async def main() -> None:
     print("=" * 40)
     print(f"Endpoint: {config.endpoint}")
     print(f"Auth: {'Service Principal' if config.is_service_principal else 'Default Azure Credential'}")
+    print()
+
+    # --- Simple Hello World Agent ---
+    print("Running a simple Hello World agent...")
+    hello_client = FoundryChatClient(
+        project_endpoint=config.endpoint,
+        model=config.deployment_name,
+        credential=config.credential,
+    )
+    hello_agent = hello_client.as_agent(
+        name="Greeter",
+        instructions="You are a friendly greeter. Be brief and cheerful.",
+    )
+    hello_response = await hello_agent.run("Hello! Who are you?")
+    print(f"Agent says: {hello_response.text}")
     print()
 
     # Get all chat-capable models

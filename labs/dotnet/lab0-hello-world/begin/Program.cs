@@ -37,7 +37,6 @@ public static class Program
       // --------- FIRST STEP ----------
       // ASK LAB INSTRUCTOR FOR THE PASSWORD
       var password = "𝒜𝒮𝒦 𝒴𝒪𝒰ℛ ℒ𝒜ℬ ℐ𝒩𝒮𝒯ℛ𝒰𝒞𝒯𝒪ℛ ℱ𝒪ℛ 𝒯ℋℰ 𝒫𝒜𝒮𝒮𝒲𝒪ℛ𝒟";
-password = "ThankYouAkumina";;
       
       var configger = new ConfigureLabKeys(password, verbose);
       configger.RandomizeDecryptDistribute(overwriteExisting: force);
