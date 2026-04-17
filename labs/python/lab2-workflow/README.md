@@ -165,18 +165,6 @@ No additional configuration needed when running in Azure.
 python program.py
 ```
 
-### Individual Demos
-```bash
-# Sequential Workflow
-python -m workflow_lab.sequential.demo
-
-# Concurrent Workflow
-python -m workflow_lab.concurrent.demo
-
-# Human-in-the-Loop Workflow
-python -m workflow_lab.human_in_the_loop.demo
-```
-
 ## 📚 Core Components
 
 ### SupportTicket
@@ -209,19 +197,9 @@ executor = TicketIntakeExecutor()
 result, event = await executor.handle(ticket)
 ```
 
-## 🧪 Lab Exercises
+## 📝 Lab Exercises
 
-### Exercise 1: Add a New Agent
-Add a "Sentiment Analysis Agent" to the sequential workflow that analyzes customer sentiment before categorization.
-
-### Exercise 2: Add More Experts
-Extend the concurrent workflow with additional specialist agents (e.g., Security Expert, Account Expert).
-
-### Exercise 3: Custom Review Actions
-Add new supervisor actions to the human-in-the-loop workflow (e.g., "Request More Info", "Auto-Reply").
-
-### Exercise 4: Workflow Composition
-Create a new workflow that combines sequential and concurrent patterns.
+For hands-on exercises, see **[begin/EXERCISES.md](begin/EXERCISES.md)**.
 
 ## 📖 Additional Resources
 
