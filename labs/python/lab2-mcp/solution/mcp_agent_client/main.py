@@ -47,23 +47,28 @@ def find_config_path(start_path: str) -> str:
 
 
 def load_env_file(env_path: str) -> dict:
-    """Load environment variables from .env file (JSON format)."""
+    """Load environment variables from .env file (JSON or KEY=VALUE format)."""
     env_file = Path(env_path) / ".env"
-    
+
     if not env_file.exists():
         return {}
-    
+
     try:
         with open(env_file, 'r') as f:
-            content = f.read()
+            content = f.read().strip()
+        try:
             env_vars = json.loads(content)
-            
-            # Set environment variables
-            for key, value in env_vars.items():
-                os.environ[key] = str(value)
-            
-            return env_vars
-    except (json.JSONDecodeError, IOError) as e:
+        except json.JSONDecodeError:
+            env_vars = {}
+            for line in content.splitlines():
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    env_vars[key.strip()] = value.strip().strip('"\'')
+        for key, value in env_vars.items():
+            os.environ[key] = str(value)
+        return env_vars
+    except IOError as e:
         print(f"Warning: Failed to load .env file: {e}")
         return {}
 
