@@ -1,6 +1,11 @@
+[![GitHub stars](https://img.shields.io/github/stars/AgentFrameworkDev/agent-framework-dev-day?style=social)](https://github.com/AgentFrameworkDev/agent-framework-dev-day)
+[![.NET 10](https://img.shields.io/badge/.NET-10-512bd4)](https://dotnet.microsoft.com/en-us/download)
+[![Python 3.13](https://img.shields.io/badge/Python-3.13-3776ab)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # Agent Framework Dev Day
 
-Agent Framework Dev Day is a full-day, instructor-led series of labs that showcase the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) and adjacent tooling across both .NET and Python ecosystems.
+Agent Framework Dev Day is a full-day, instructor-led series of labs that showcase the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) and adjacent tooling across both .NET and Python tracks. The hands-on exercises walk attendees from first-run validation to advanced patterns such as Model Context Protocol (MCP), workflow orchestration, and Agentic Retrieval-Augmented Generation (RAG).
 
 ## Agenda
 
@@ -18,7 +23,7 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 
 ### .NET track prerequisites
 - [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download) (labs rely on .NET 10 features and templates)
-- Latest [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) or [C# extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) plus the .NET runtime debugging workload in VS Code
+- Latest [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) or [C# extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) plus the [Polyglot Notebooks extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.dotnet-interactive-vscode) for `.ipynb` support
 - Follow the environment notes in [labs/dotnet/README.md](labs/dotnet/README.md) for per-lab debugging tips
 
 ### Python track prerequisites
@@ -28,7 +33,7 @@ Agent Framework Dev Day is a full-day, instructor-led series of labs that showca
 
 ## Repository layout
 
-- [labs/dotnet](labs/dotnet) – C# solutions covering hello-world onboarding through MCP, workflows, and Agentic RAG. Every lab folder contains both `/begin` (exercise) and `/solution` (reference) subfolders.
+- [labs/dotnet](labs/dotnet) – C# solutions covering hello-world onboarding through MCP, workflows, and Agentic RAG. Every lab folder contains both `/begin` (exercise) and `/solution` (reference) projects.
 - [labs/python](labs/python) – Python equivalents for MCP, workflow, and RAG scenarios, plus notebooks to reinforce concepts.
 - [tools](tools) – Utility projects (for example, LabKey encrypters) that support the hands-on exercises.
 - [VSCode-Extensions.md](VSCode-Extensions.md) – Canonical list of extensions, themes, and settings the instructors will reference.
